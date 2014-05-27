@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# postslate - wrapper script for the Postslate tool
+#
+# Usage:
+#	postslate [ JVM args ] [ postslate args ]
+#
+# Copyright (C) 2014 New Aspect Technologies, Inc. All rights reserved.
+# Distribution and use are permitted under the terms of the LICENSE.txt
+# file included with the source code of this project.
+
+launchdir=`dirname $0`
+psargs=""
+jvmargs="-Xmx2000M" # default, can be overridden on the command line
+jarname=postslate.jar
+
+while [ -n "$1" ]
+do
+	case $1 in
+	--cache)
+		psargs="${psargs} $1 $2"
+		shift
+		;;
+	--cache=*|-h)
+		psargs="${psargs} $1"
+		;;
+	*)
+		jvmargs="${jvmargs} $1"
+		;;
+	esac
+	shift
+done
+
+# Allow running from the untarred package or from an installed location
+dirs="$launchdir ${launchdir}/../share/postslate/lib"
+for dir in $dirs
+do
+	if [ -f ${dir}/${jarname} ]; then
+		jarpath=$dir
+		break
+	fi
+done
+if [ -z "$jarpath" ]; then
+	echo "Sorry, could not locate ${jarname} in any of the following directories:
+	$dirs"
+	exit 3
+fi
+
+if [ "`uname -s`" = Darwin ]; then
+	# workable, though imperfect, hack for dealing with the Darwin System menu
+	jvmargs="${jvmargs} -Xdock:name= "
+fi
+
+exec java ${jvmargs} -jar ${jarpath}/${jarname} ${psargs}

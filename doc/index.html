@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+.command {	font-family: monospace;	}
+.control { font-size: larger; font-style: italic; }
+.parameter { font-family: monospace; }
+.path {	font-family: monospace; }
+</style>
+<meta charset="utf-8" />
+<title>Postslate Documentation</title>
+</head>
+<body>
+<h1>Tutorial</h1>
+
+<h2>Startup</h2>
+
+<p>After following the installation instructions contained in <span class="path">README.txt</span>, run
+
+<kbd>postslate</kbd>
+
+on a Unix, Linux or Macintosh system; or run
+
+<kbd>postslate.bat</kbd>
+
+on Windows.  You should be greeted with Postslate's main window:</p>
+
+<figure>
+	<img src="mainwindow.png"/>
+	<figcaption>Postslate's main window</figcaption>
+</figure>
+
+<p>On startup, Postslate checks for the presence of needed FFMPEG components.
+If it fails to find them, you will be prompted to select their location, or to install FFMPEG.
+Doing so is relatively easy; FFMPEG 2.0 or higher is strongly recommended. 
+If you have no other purpose for installing FFMPEG, you may wish to download statically-linked binaries. 
+There are several options for obtaining and installing the FFMPEG tool, ranging from downloading binaries to compiling it yourself from source code. 
+Visit the <a href="http://www.ffmpeg.org/download.html">FFMPEG website</a> for details.</p>
+
+<h2>Basic Workflow</h2>
+<p>Using Postslate to synchronize a collection of video clips with their corresponding audio recordings boils down to a three-part process:
+<ol>
+<li>Scan the contents of a pair of directories, one containing video, the other audio.</li>
+<li>Synchronize matching clips and discard unmatched clips.</li>
+<li>Merge the matched pairs of video/audio clips.</li>
+</ol>
+</p>
+
+<h3>Scanning Directories</h3>
+
+<p>If you're interested in Postslate, you presumably have a set of camera video clips that you want to be matched up and synchronized with a set of corresponding audio clips from an external recorder. 
+Begin by selecting the video and audio directories, or folders. 
+Select the clip locations, either by clicking on the <button>...</button> buttons or by typing the paths. 
+(The clips can be in different locations or under the same directory.  For the latter, set the same path twice.)</p>
+
+<figure>
+<img src="scanning.png"/>
+<figcaption>Set the video/audio paths first.</figcaption>
+</figure>
+
+<p>Next, click the <button>Scan</button> button.  The process may take some time as Postslate makes two passes, one through the video files and one through the audio:</p>
+
+<figure>
+<img src="scanning2.png"/>
+<figcaption>Scanning progress</figcaption>
+</figure>
+
+<p>When scanning is finished, the Postslate window contains a list of your video and audio clips.</p>
+
+<figure>
+<img src="listfiles.png"/>
+<figcaption>After scanning, Postslate shows a list of clips</figcaption>
+</figure>
+
+<h3>Synchronizing Clips</h3>
+
+<p>For Postslate to work well, the order of your camera video clip names should approximately track that of the audio segments. 
+Naturally, there are likely to be files that don't match--video segments where the camera was running accidentally, or when audio recording was solo--, but these are easily dealt with.
+If both the camera and the audio recorder name their files with some sort of ascending sequence pattern, you should be fine.</p>
+
+<p>Initially, the first video clip, <span class="path">00128.MTS</span>, is paired with the first audio clip, <span class="path">STE-000.wav</span>. 
+This may or may not be what you want.  Begin by clicking on the top row in the list at left:</p>
+
+<figure>
+<img src="firstpair.png"/>
+<figcaption>Selecting a pair, with auto-preview</figcaption>
+</figure>
+
+<p>Soon after clicking on the pair, a video player window pops up, displaying a 5-second preview combining camera video with external audio. 
+The preview is centered on the portion from each clip that Postslate believes is most likely to be the synchronized clap. 
+If you both see and hear the slate during this preview, and the scene announced matches what's shown on the slate, then it worked correctly the first time. 
+Usually, this is what happens.</p>
+
+<p>There are several items worth pointing out here:
+<ul>
+<li>When you clicked on the pair of files, a preview began immediately.  This behavior can be changed via the Auto checkbox to the right of the window.</li>
+<li>The preview showed only the clap.  Alternately, you can choose to preview the full merged file (camera video+external audio), the camera video by itself, or just the external audio.  Set this by changing the radio buttons on the right.</li>
+<li>The automatic preview played once.  To repeat, click the Play button.</li> 
+</ul>
+</p>
+
+<p>Around the end of the preview, Postslate displays graphs of the audio waveforms:</p>
+
+<figure>
+<img src="wavegraphs.png"/>
+<figcaption>Waveform graphs displayed</figcaption>
+</figure>
+
+<p>
+In each graph, a green line marks the point where Postslate thinks the clap is.  (These points are always shown aligned.)
+Blue lines mark the start and end points of the synchronized pair of clips (based on the clap positions), trimmed to be the same length.
+To the right of each graph, a combo box shows a number.  This number represents the clap position in seconds after the beginning of the clip.
+</p>
+
+Moving on, we now select the second pair:
+
+<figure>
+<img src="secondpair.png"/>
+</figure>
+
+The preview for this pair is very brief and contains a clap sound, but there is no slate shown in the video. 
+Also, the graphs look mismatched:  The video clip is much shorter than the audio.
+A reasonable conclusion is that video clip <span class="path">00129.MTS</span> is junk and needs to be discarded.
+To do this, hold down the <kbd>Ctrl</kbd> key and click the video clip's name:
+
+<figure>
+<img src="stagvideo.png"/>
+</figure>
+
+This action marks <span class="path">00129.MTS</span> as "stag", and it now appears grayed-out in the list. 
+Meanwhile, the audio clip <span class="path">STE-001.wav</span> now appears alongside <span class="path">00130.MTS</span>.
+Click on that pair to see if it is a good match:
+
+<figure>
+<img src="thirdpair.png"/>
+</figure>
+
+<p>The preview includes the clap for Scene 9N, Take 1, in both video and audio.  On to the next.</p>
+
+<p>Two pairs down, when previewing the pair <span class="path">00132.MTS</span>/<span class="path">STE-003.wav</span>, we encounter something different:
+
+<figure>
+<img src="previewnoclap.png"/>
+</figure>
+
+No slate appears in the preview, and no clap can be heard.</p>
+
+<p>The first thing to check is the waveform graphs:
+
+<figure>
+<img src="graphnoclap.png"/>
+</figure>
+
+The video and audio clips are long and approximately the same length, suggesting they could be matchable.
+But, at the least, the clap location needs to be adjusted.
+(The clap position near the end of the clips isn't necessarily a problem--the scene could have been tail-slated.)  
+</p>
+<p>There are several things we could try:
+<ul>
+<li>We could try playing the camera video by itself, in its entirety (select Video, click Play) to verify that it contains a valid take.</li>
+<li>We could listen to the audio solo (select Audio, click Play).</li>
+<li>We could try adjusting the clap points.</li>
+</ul>
+</p>
+
+<p>Let's try the latter.  Pulling down the combo box next to the camera waveform graph, we can see other options for the clap position.</p>
+
+<figure>
+<img src="clapcombo.png"/>
+</figure>
+
+<p>
+These possible clap points are ranked in the order of likelihood.  
+When scanning the video and audio clips, Postslate looks through each audio stream for percussive sounds; the rank order reflects the "percussiveness" of the audio.  
+Depending on the scene being shot, there may be factors to throw off this guess--e.g., a person playing the drums. 
+In any case, we see here that while Postslate put the first-guess clap point at 78.816 seconds into the video, its second-guess clap point occurred at 17.007 seconds.
+This likely corresponds to the spike (circled).
+Changing the clap point to this position, we see:
+</p>
+
+<figure>
+<img src="clapcombochange1.png"/>
+</figure>
+
+This is encouraging:  The slate now appears in the video part of the preview.
+Since no clap is heard, let's try changing the external audio's clap point to the second-guess position:
+
+<figure>
+<img src="clapcombochange2.png"/>
+</figure>
+
+<p>And this does the trick.  Note that in the above screenshot, while the clap preview was going, the audio waveform graphs had not finished updating. 
+Afterwards, they looked like this:</p>
+
+<figure>
+<img src="clapchangegraph.png"/>
+</figure>
+
+From the discussion so far, you now have a basic understanding of the process.  Lather, rinse, and repeat for each clip.
+
+<h3>Merging the Results</h3>
+
+<p>After working through the whole list, you will have a set of matched, synchronized pairs of video/audio clips.
+At this point, you can "merge" the clips by combining the camera video with the external audio.
+Merging, by default, simply means repackaging the synchronized, trimmed portions of each clip and placing them into the same container.  It does NOT involve transcoding, and thus you should incur no loss of quality.
+In the screenshots shown here, the source camera clips are encoded using H.264 and the files are in MPEG Transport Stream format, while the audio clips are WAV files.
+After merging, we end up with the same H.264-encoded video stream, plus AC3 audio inside a MOV container:</p>
+
+<figure>
+<img src="merge.png"/>
+</figure>
+
+<p>
+There are several options to control the merge:
+
+<ul>
+<li>If <style class="control">Camera audio</style> is checked, the camera audio is included in the merged output as a secondary audio stream.  You may find it useful for reference during editing, though doubtless most of the time you'll want to mute that channel.  It provides a helpful comparison of the camera audio vs. externally-recorded sound.  You may find it useful to merge your clips with this option enabled, do some editing, and then merge again with this option disabled.</li>
+<li>If <style class="control">Extra video</style> is checked, any secondary video streams from the camera clips are included in the merge output.  By default, only the primary video is included.</li> 
+<li>If <style class="control">Data streams</style> is checked, any data streams from the camera clips are included in the merge output.</li>
+<li>Finally, if <style class="control">Separate A/V outputs</style> is enabled, the trimmed and synchronized pairs of clips are written to the merge folder as separate files.  In the above example, the output names would look something like <span class="path">00132.mov</span>/<span class="path">00132.wav</span>.</li>
+</ul>
+</p>
+
+<p>
+After setting merge options, click <button>Merge All</button>.  The process should be fairly quick when it doesn't involve transcoding.
+</p>
+
+<h1>Troubleshooting / FAQs</h1>
+
+<p id="settingsfile">Q: Where does Postslate store my settings?</p>
+<p>A: Settings are stored in a text file, <span class="path">${HOME}/.postslate/postslate.properties</span>, 
+where <span class="path">${HOME}</span> means your user home directory.  (On Mac OS X, home directories are something like <span class="path">/Users/*</span>.)
+Feel free edit the <span class="path">postslate.properties</span> file using a text editor.  Blank lines and comments (i.e., lines beginning with "#") are ignored.  Default settings are shown commented-out, so you can just remove the leading "#" and change the value.</p>
+
+<p>Q: What if my audio/video clips don't show up in the scanned list?</p>
+<p>A: By default, Postslate uses commonly-recognized filename extensions (*.avi, *.wav, etc.) to identify audio and video files. If your files are not recognized, you have two options:
+<ol>
+<li>You could rename your files, or</li>
+<li>You could edit the list of filename extensions used by Postslate.</li>
+</ol>
+</p>
+
+<p>We'll assume you want to do the latter.  Use a text editor to edit <span class="path">postslate.properties</span>--see the question above.
+Change the <span class="parameter">com.newasptech.postslate.filespec_video</span> or <span class="parameter">com.newasptech.postslate.filespec_audio</span> settings as needed.
+</p>
+
+<p>Q: What if there are a lot of percussive sounds in the scene, and the real clap doesn't make it into Postslate's top-ten list of guesses?</p>
+<p>A: By default, Postslate selects 100 candidates for each clip as it is being scanned. You can view more values by increasing the "Show ## candidates" spinner value at the top of the window.  By default, these "clap candidates" are shown ranked by "percussiveness" (i.e., Postslate looks for the waveform segments with the steepest slopes); if you would rather display them in time order, change the "Sort by" setting next to it.</p>
+
+<p>Q: What if the real clap doesn't make it into the top 100?</p>
+<p>A: The 100-candidate value is a default.  However, you can change this by editing the <span class="parameter">com.newasptech.postslate.scan_events</span> parameter--see the question above about changing settings.  After editing, click the <button>Re-scan</button> button and adjust the "Show candidates" setting as needed.</p>
+
+<p>Q: What if Postslate runs out of memory?</p>
+<p>A: Postslate is written in Java, and the Java Virtual Machine (JVM) requires that each program be started with a setting that limits the maximum amount of memory that it can use.  By default, Postslate uses 2 GB of memory.  If you are working with an excessively-long clip, this may not be enough.  When starting, specify the "-Xmx" JVM parameter--e.g., to allow 3 GB, change the command to start Postslate from <span class="path">postslate</span> to <span class="path">postslate -Xmx3000M</code>.</p>
+
+<h1>Tips &amp; Tricks</h1>
+
+<h2>How to use a custom video player</h2>
+<p>
+Edit the <a href="#settingsfile">Postslate settings file</a>, changing the value of <span class="parameter">com.newasptech.postslate.video_play_cmd</span> to a command.  Within that command, you can use the following parameters:
+<ul>
+<li><span class="parameter">%f</span> full path to the clip</li>
+<li><span class="parameter">%H</span> window height, in pixels</li>
+<li><span class="parameter">%W</span> window width, in pixels</li>
+</ul>
+</p>
+
+<p>By default, Postslate uses a very basic video player, <span class="command">ffplay</span>.
+You may get good results by using <a href="http://www.videolan.org/vlc/">VideoLAN Client</a>, <a href="http://ed.com/qp/">Command Line QuickTime Player</a>, or another player of your choice.
+</p>
+
+<h2>How to generate a report of matches</h2>
+<p>After matching synchronizing a set of clips, you may wish to obtain a textual report showing the matched files and clap times.  You can do this by calling into Postslate's jar file directly from the command line.  For example:</p> 
+<kbd>java -jar postslate.jar  list --dir=/path/to/audio/or/video</kbd>
+
+<h2>How to dump a waveform programmatically (Java)</h2>
+
+<p>The following basic example shows how you can use the WAVE-related tools inside Postslate to dump waveform data from an arbitrary WAV file.
+It generates textual output with one sample frame per row, one channel per column.
+Samples are normalized to signed, 4-byte floating-point values in the range [-1.0, 1.0].
+It should work for a WAV file containing any number of channels, any sample rate, and sample widths of 8, 16, 24 or 32 bits. 
+</p>
+
+<pre>
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.util.Iterator;
+import com.newasptech.postslate.audio.wave.FormatHeader;
+import com.newasptech.postslate.audio.wave.RiffChunk;
+import com.newasptech.postslate.audio.wave.SampleFrame;
+import com.newasptech.postslate.audio.wave.WaveStreamReader;
+
+public class Demo {
+    public static final DecimalFormat F_TIME = new DecimalFormat("###,##0.000000");
+    public static final DecimalFormat F_AMP = new DecimalFormat(" ###,##0.000000;-###,##0.000000");
+
+    public static void dumpWave(String path) throws Exception {
+        InputStream f = new FileInputStream(path);
+        WaveStreamReader wavReader = new WaveStreamReader(f);
+        float riffStartTime = (float)0.0;
+        // Iterate through the RIFF chunks in the WAV file
+        for (Iterator<RiffChunk> pRiffChunk = wavReader.iterator();	pRiffChunk.hasNext();) {
+            RiffChunk riffChunk = pRiffChunk.next();
+            FormatHeader header = riffChunk.getHeader();
+            System.out.println(header.toString());
+            // Iterate through the sample frames in the RIFF chunk
+            int framePos = 0;
+            for (Iterator<SampleFrame> pSampleFrame = riffChunk.getData().iterator(); pSampleFrame.hasNext();) {
+                SampleFrame sfr = pSampleFrame.next();
+                StringBuffer s = new StringBuffer();
+                s.append(F_TIME.format(riffStartTime + header.getPeriod() * framePos++));
+                // Get normalized sample values for the frame, one per channel
+                float[] fAmp = sfr.getNormFloatAmplitudes();
+                for (float fa: fAmp) {
+                    s.append("\t");
+                    s.append(F_AMP.format(fa));
+                }
+                System.out.println(s.toString());
+            }
+            riffStartTime += header.getPeriod() * framePos;
+        }
+    }
+}
+</pre>
+
+To go beyond this, please use the source code, which is distributed freely.  And that brings us to...
+
+<h1>License</h1>
+
+The Postslate software and source code are distributed under the terms of the license contained in file LICENSE.txt, included with the source code.
+This documentation is distributed under the terms of <a href="https://www.gnu.org/licenses/fdl-1.3.txt">the GNU Free Documentation License, version 1.3</a>.
+
+
+
+</body>
+</html>
