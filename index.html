@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Postslate by newasptech</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/newasptech/postslate">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/newasptech/postslate/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/newasptech/postslate/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Postslate</h1>
+          <p>A video post-production tool for synchronizing media clips</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/newasptech">newasptech</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a name="postslate--what-is-it" class="anchor" href="#postslate--what-is-it"><span class="octicon octicon-link"></span></a>Postslate:  What is it?</h1>
+
+<p>Postslate is a tool for use in video post-production.  Its main purpose is to help you match and synchronize video segments recorded by a camera with audio clips captured by a separate recorder.</p>
+
+<p>Postslate works by detecting and matching the "clap" sounds from a slate.</p>
+
+<p>(insert slate image here)</p>
+
+<p>The Postslate tool allows you to preview and adjust matches between video and audio clips, and to prepare the clips for use in editing.</p>
+
+<p>(insert GUI image here)</p>
+
+<p>Once synchronized, the camera video and external audio are trimmed and optionally merged together.  Merging involves repackaging streams without transcoding them, so there is no loss of quality.</p>
+
+<p>All of Postslate's operations are non-destructive:  Postslate NEVER deletes or modifies your original media clips.  It only reads them.</p>
+
+<h1>
+<a name="application" class="anchor" href="#application"><span class="octicon octicon-link"></span></a>Application</h1>
+
+<p>In its current form, Postslate can be useful in your video production efforts if:</p>
+
+<ul>
+<li>the camera video is in a form usable by <img src="http://www.ffmpeg.org" alt="FFMPEG"> (quite likely);</li>
+<li>the video clips include audio (albeit inferior) captured by a camera microphone;</li>
+<li>the externally-recorded audio clips are in WAV format.</li>
+</ul><h1>
+<a name="download" class="anchor" href="#download"><span class="octicon octicon-link"></span></a>Download</h1>
+
+<p>The latest stable version of Postslate is 0.1.  You may download is as a <img src="tgz%20link" alt="gzipped tar file"> or as a <img src="zip%20link" alt="ZIP archive">.</p>
+
+<h1>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h1>
+
+<p>Postslate is written in Java and should work on virtually any modern system.</p>
+
+<p>Postslate requires a Java virtual machine, version 6 or higher.  There are many JRE
+distributions freely available.  If you don't already have one, please see
+<img src="http://en.wikipedia.org/wiki/List_of_Java_virtual_machines" alt="this list">.</p>
+
+<p>Before installing Postslate, you need to make sure that the FFMPEG package is installed.
+If you don't already have it, see <img src="http://ffmpeg.org/download.html" alt="the FFMPEG website">.
+Version 2.0 or higher is strongly recommended.</p>
+
+<p>If you want to modify Postslate, you should also have the <img src="http://ant.apache.org" alt="Ant build tool"> installed, or else be prepared to use your own tool--e.g., Eclipse.</p>
+
+<p>The easiest installation is simple to unpack the distribution file (i.e., postslate-*.tar.gz)
+and to launch it using the included postslate script (Mac/Linux/Unix).
+On Windows, run postslate.bat .</p>
+
+<p>From the Mac/Linux/Unix/Cygwin command line, you can also use the commands
+<code>./configure [--prefix=path]</code>
+<code>make</code>
+<code>make install</code>
+familiar to many users of free software.</p>
+
+<h1>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h1>
+
+<p>To get started, please see the <img src="https://github.com/newasptech/postslate/wiki/Quick-Tutorial" alt="tutorial">.</p>
+
+<hr><p>Copyright (C) 2014 New Aspect Technologies, Inc. All rights reserved.
+See the LICENSE.txt file for copyright licensing info.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
