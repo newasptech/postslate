@@ -15,7 +15,6 @@ import com.newasptech.postslate.Cmd;
 import com.newasptech.postslate.Config;
 import com.newasptech.postslate.gui.BasePanel.ViewType;
 import com.newasptech.postslate.util.Misc;
-import com.newasptech.postslate.util.Subprocess;
 
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
@@ -201,7 +200,7 @@ public class MainFrame extends JFrame {
 					StringBuilder newPath = new StringBuilder(dir.getPath());
 					String path = cfg.getProperty(Config.SEARCH_PATH);
 					if (path.length() > 0) {
-						newPath.append(Subprocess.ENV_PATH_SEPARATOR);
+						newPath.append(File.pathSeparator);
 						newPath.append(path);
 					}
 					cfg.setProperty(Config.SEARCH_PATH, newPath.toString());

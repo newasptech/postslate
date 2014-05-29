@@ -6,7 +6,6 @@
 package com.newasptech.postslate;
 
 import java.io.File;
-import com.newasptech.postslate.util.Subprocess;
 
 public interface AVEngine {
 	static enum MetaKey { CODEC_TYPE, DURATION };
@@ -59,12 +58,12 @@ public interface AVEngine {
 			msg.append(errMsg);
 			msg.append("\n\nThe list of executable search paths is as follows:");
 			if (extraPath != null && extraPath.length() > 0) {
-				for (String p : extraPath.split(Subprocess.ENV_PATH_SEPARATOR)) {
+				for (String p : extraPath.split(File.pathSeparator)) {
 					msg.append("\n");
 					msg.append(p);
 				}
 			}
-			for (String p : System.getenv("PATH").split(Subprocess.ENV_PATH_SEPARATOR)) {
+			for (String p : System.getenv("PATH").split(File.pathSeparator)) {
 				msg.append("\n");
 				msg.append(p);
 			}

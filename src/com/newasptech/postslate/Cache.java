@@ -54,7 +54,11 @@ public class Cache {
 	public String forDirectory(String dir) {
 		StringBuffer cdpath = new StringBuffer(getBasedir());
 		cdpath.append(System.getProperty("file.separator"));
-		cdpath.append((new File(dir)).getAbsolutePath().replace(System.getProperty("file.separator").charAt(0), '_'));
+		String sourcePath = (new File(dir)).getAbsolutePath();
+		for (char c : new char[]{File.separatorChar, ':'}) {
+			sourcePath = sourcePath.replace(c, '_');
+		}
+		cdpath.append(sourcePath);
 		return getUsableDirectory(cdpath.toString());
 	}
 	

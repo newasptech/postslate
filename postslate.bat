@@ -1,2 +1,3 @@
-@echo off
-java /Xmx2000M /jar postslate.jar %*
+@echo on
+java -Xmx1000M -jar postslate.jar %*
+

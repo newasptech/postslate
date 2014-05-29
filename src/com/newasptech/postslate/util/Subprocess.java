@@ -55,7 +55,6 @@ public class Subprocess {
 		return (int)timeoutInSec * MILLISECONDS_PER_SECOND;
 	}
 	
-	public static final String ENV_PATH_SEPARATOR = ":";
 	/** If the executable does not contain a directory and an extra search path is specified,
 	 * search to see if the executable exists in one of the extra directories and explicitly
 	 * add its path.  (If the executable cannot already be found using the contents of the
@@ -64,7 +63,7 @@ public class Subprocess {
 		String executable = args[0];
 		if (extraPath != null && extraPath.length() > 0
 				&& executable.indexOf(System.getProperty("file.separator").charAt(0)) < 0) {
-			for (String p : extraPath.split(ENV_PATH_SEPARATOR)) {
+			for (String p : extraPath.split(File.pathSeparator)) {
 				File f = new File(p + System.getProperty("file.separator") + executable);
 				if (f.isFile() && f.canExecute()) {
 					args[0] = f.getPath();

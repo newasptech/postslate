@@ -55,7 +55,7 @@ public class Config extends Properties {
 		ac(c, PRE_CLAP, PRE_CLAP_DEF, "When previewing the clap, how many seconds of footage should be shown prior to the clap?");
 		ac(c, POST_CLAP, POST_CLAP_DEF, "When previewing the clap, how many seconds of footage should be shown following the clap?");
 		ac(c, SCAN_EVENTS, SCAN_EVENTS_DEF, "When scanning an audio stream for possible claps, how many events (i.e., clap candidates) should be collected? (You must re-scan a directory after changing this parameter for the new value to take effect.)");
-		ac(c, SEARCH_PATH, SEARCH_PATH_DEF, "Extra paths to search for executables; will be prepended to the PATH environment variable value.");
+		ac(c, SEARCH_PATH, SEARCH_PATH_DEF, "Extra paths to search for executables; will be prepended to the PATH environment variable value.  Use the platform-appropriate delimiter (';' for Windows, ':' for Linux/Mac/UNIX) to separate items.");
 		ac(c, QUANTIZE_FACTOR, QUANTIZE_FACTOR_DEF, "When scanning for claps, 'quantize' the results into chunks of this size, which represents a multiple of the typical clap duration.  In other words, if a typical clap lasts 0.005 seconds and the quantize factor is set to 2, then each 0.01-second interval of audio can contain at most one clap candidate.");
 		ac(c, TYPICAL_CLAP_DURATION, TYPICAL_CLAP_DURATION_DEF, "How long, in seconds, does a typical clap last? (You must re-scan a directory after changing this parameter for the new value to take effect.)");
 		ac(c, VIDEO_PLAY_CMD, VIDEO_PLAY_CMD_DEF, "Command to launch video player with %f for file path, %H for window height and %W for window width");
