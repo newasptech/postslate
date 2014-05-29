@@ -1,0 +1,16 @@
+.classpath
+.project
+.settings
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache
+bin
+config.log
+config.status
+configure
+install-sh
+missing
+postslate-*.tar.gz
+postslate-*.zip
+postslate.jar
