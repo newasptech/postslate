@@ -79,20 +79,33 @@ public class Cmd {
 		}
 	}
 	
-	public static void list(Cache cache, String dir, String delim, Config cfg)
+	private static void list(Cache cache, String dir, String delim, float vshift, Config cfg)
 			throws Exception {
-		Workspace wksp = new Workspace(dir, cfg, cache, newAVEngine(cfg), null);
+		AVEngine e = newAVEngine(cfg);
+		Workspace wksp = new Workspace(dir, cfg, cache, e, null);
 		for (Iterator<Workspace.AVPair> pp = wksp.contents().iterator(); pp.hasNext();) {
 			Workspace.AVPair p = pp.next();
-			String[] parts = new String[]{"", "", "", ""};
+			String Z = TIME_FORMAT.format(0.0f), NF = "-";
+			String[] parts = new String[]{NF, Z, Z, NF, Z, Z};
+			float vDuration = (p.video() != null) ? AVClip.duration(p.video(), AVEngine.MetaValue.CODEC_TYPE_AUDIO, e) : 0.0f,
+					aDuration = (p.audio() != null) ? AVClip.duration(p.audio(), AVEngine.MetaValue.CODEC_TYPE_AUDIO, e) : 0.0f;
+			float[] bounds = null;
+			if (p.video() != null && p.audio() != null) {
+				bounds = trimBoundaries(vDuration, p.video().getOffset(), vshift,
+					aDuration, p.audio().getOffset());
+			}
 			int i=0;
 			if (p.video() != null) {
 				parts[i++] = p.video().getName();
-				parts[i++] = TIME_FORMAT.format(p.video().getOffset());
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[0] : 0.0f);
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[0] + bounds[2] : vDuration);
 			}
+			else
+				i += parts.length / 2;
 			if (p.audio() != null) {
 				parts[i++] = p.audio().getName();
-				parts[i++] = TIME_FORMAT.format(p.audio().getOffset());
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[1] : 0.0f);
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[1] + bounds[2] : aDuration);
 			}
 			System.out.println(Text.join(parts, delim));
 		}
@@ -183,7 +196,7 @@ public class Cmd {
 			boolean copyOtherStreams, String vcodec, String acodec, String outputDir, AVEngine e, Config cfg) {
 		float vClipLen = vFile.getMeta().findFirst(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_VIDEO)).get(e.metaKeyName(AVEngine.MetaKey.DURATION)).fValue(),
 				aClipLen = aFile.getMeta().findFirst(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO)).get(e.metaKeyName(AVEngine.MetaKey.DURATION)).fValue();
-		float[] bounds = trimBoundaries(vClipLen, vFile.getOffset() + vAdjustment, aClipLen, aFile.getOffset());
+		float[] bounds = trimBoundaries(vClipLen, vFile.getOffset(), vAdjustment, aClipLen, aFile.getOffset());
 		String mergeFile = mergeTarget(vFile, outputContainer, outputDir);
 		SortedSet<Integer> vIndexSet = streamIndices(vFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_VIDEO), !copyAllVideoStreams);
 		SortedSet<Integer> aIndexSet = streamIndices(aFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO), !copyAllVideoStreams);
@@ -212,7 +225,16 @@ public class Cmd {
 		return s.toString();
 	}
 	
-	public static float[] trimBoundaries(float vClipLen, float vClapPos, float aClipLen, float aClapPos) {
+	/** Given the length and clap positions for each member of a video/audio pair,
+	 *  return 3 values in this order:
+	 *  1. trimmed video start time as an offset from the beginning of the source clip
+	 *  2. trimmed audio start time as an offset from the beginning of the source clip
+	 *  3. trimmed duration (same for both)
+	 *   */
+	public static float[] trimBoundaries(float vClipLen, float _vClapPos, float vShift, float aClipLen, float aClapPos) {
+		assert(vClipLen > _vClapPos);
+		assert(aClipLen > aClapPos);
+		float vClapPos = _vClapPos + vShift;
 		float[] bounds = new float[3];
 		float preClapLen = Math.min(vClapPos, aClapPos),
 				postClapLen = Math.min(vClipLen - vClapPos, aClipLen - aClapPos);
@@ -340,9 +362,9 @@ public class Cmd {
 		String previewFilePath = merge(vdir, vFile, adir, aFile, vshift,
 				getContainer(container, cfg), allVideo, allAudio, copyOther, vcodec, acodec, workdir, e, cfg);
 		File previewFile = new File(previewFilePath);
-		float[] mergeBounds = trimBoundaries(AVClip.duration(vFile, AVEngine.MetaValue.CODEC_TYPE_VIDEO, e), vFile.getOffset(),
-				AVClip.duration(aFile, AVEngine.MetaValue.CODEC_TYPE_AUDIO, e), aFile.getOffset());
-		float mergedFileDuration = mergeBounds[2];
+		float mergedFileDuration = trimBoundaries(AVClip.duration(vFile, AVEngine.MetaValue.CODEC_TYPE_VIDEO, e),
+				vFile.getOffset(), vshift, AVClip.duration(aFile, AVEngine.MetaValue.CODEC_TYPE_AUDIO, e),
+				aFile.getOffset())[2];
 		AVClip pClip = new AVClip(new AVFileRef(previewFile, null), 0.0f, mergedFileDuration + POST_VIDEO_PADDING);
 		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e, cfg);
 		previewFile.deleteOnExit();
@@ -402,7 +424,8 @@ public class Cmd {
 				"unmatch - remove a match previously created between two files\n" + 
 				"  unmatch { --vfile= | --afile= }\n" + 
 				"\n" + 
-				"list - given either an audio or a video directory, list clips, showing both stag and matched files.\n" + 
+				"list - given either an audio or a video directory, list clips, showing both stag and matched files.\n" +
+				"\tFor each clip, show the trimmed start and end times.\n" + 
 				"  list --dir= [--delim=]\n" + 
 				"stag - mark a file as not having any match\n" + 
 				"  stag {file}\n" + 
@@ -538,7 +561,7 @@ public class Cmd {
 		else if (command.contentEquals("unmatch"))
 			unmatch(cache, vfile, afile, cfg);
 		else if (command.contentEquals("list"))
-			list(cache, listDir, delim, cfg);
+			list(cache, listDir, delim, vshift, cfg);
 		else if (command.contentEquals("stag"))
 			stag(cache, optArgs(opts, g.getOptind()), cfg);
 		else if (command.contentEquals("unstag"))

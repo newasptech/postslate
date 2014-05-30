@@ -149,6 +149,7 @@ class Backend {
     	try {
     		wksp.saveMatches();
     		updateWaveGraphs(new AVClipNDir(vClip, wksp.getVideoDir()),
+    				(Float)c.getVideoShift().getValue(),
         			new AVClipNDir(aClip, wksp.getAudioDir()),
         			c.getVideoGraphPanel(),	c.getAudioGraphPanel());
         	autoPlayIfNeeded(-1, c);
@@ -167,11 +168,11 @@ class Backend {
 		boolean haveAudio = !(STAG_MATCH.equals((String)c.getFileList().getValueAt(row, 1)));
 		if (haveAudio)
 			aClip = wksp.findClip(new File(getFilePath(row, 1, c)));
-		updateWaveGraphs(vClip, aClip, c.getVideoGraphPanel(), c.getAudioGraphPanel());
+		updateWaveGraphs(vClip, (Float)c.getVideoShift().getValue(), aClip, c.getVideoGraphPanel(), c.getAudioGraphPanel());
 		c.getSyncPanel().setClips(vClip != null ? vClip.clip : null, aClip != null ? aClip.clip : null);
 	}
 	
-	private void updateWaveGraphs(AVClipNDir vc0, AVClipNDir acd, WaveGraphPanel vGraphPanel, WaveGraphPanel aGraphPanel)
+	private void updateWaveGraphs(AVClipNDir vc0, float vShift, AVClipNDir acd, WaveGraphPanel vGraphPanel, WaveGraphPanel aGraphPanel)
 		throws IOException {
 		vGraphPanel.nullifyLoader();
 		aGraphPanel.nullifyLoader();
@@ -185,6 +186,7 @@ class Backend {
 				new int[]{vc0.clip.getMeta().findFirstIndex(ave.metaKeyName(AVEngine.MetaKey.CODEC_TYPE),
 				ave.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO))}), vc0.dir);
 			vClipLen = AVClip.duration(vcd.clip, AVEngine.MetaValue.CODEC_TYPE_AUDIO, ave);
+			_l.log(Level.FINE, String.format("vc0.clip.getDuration() = %.6f, vClipLen = %.6f", vc0.clip.getDuration(), vClipLen));
 			if (acd == null) {
 				trimDuration = vClipLen;
 				graphTimeSpan = vClipLen;
@@ -214,10 +216,11 @@ class Backend {
 		else _l.log(Level.FINE, "audio clip is null");
 		if (vcd != null && acd != null) {
 			float[] bounds = Cmd.trimBoundaries(vClipLen, vcd.clip.getOffset(),
-					aClipLen, acd.clip.getOffset());
+					vShift,	aClipLen, acd.clip.getOffset());
 			vTrimStart = bounds[0];
 			aTrimStart = bounds[1];
 			trimDuration = bounds[2];
+			_l.log(Level.FINE, String.format("video trim start = %.6f, audio trim start = %.6f, trim duration = %.6f", vTrimStart, aTrimStart, trimDuration));
 			float graphBeforeClap, graphAfterClap = Math.max(vClipLen - vcd.clip.getOffset(), aClipLen - acd.clip.getOffset());
 			if (vcd.clip.getOffset() > acd.clip.getOffset()) {
 				graphBeforeClap = vcd.clip.getOffset();
