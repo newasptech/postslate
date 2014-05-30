@@ -343,8 +343,13 @@ public class MainFrame extends JFrame {
 				Cmd.main(args);
 			}
 		}
-		FrameRunner fr = new FrameRunner(cacheDir);
-		EventQueue.invokeLater(fr);
+		if (g.getOptind() < args.length) {
+			Cmd.main(args);
+		}
+		else {
+			FrameRunner fr = new FrameRunner(cacheDir);
+			EventQueue.invokeLater(fr);
+		}
 	}
 	
 	public static final String APPLICATION_NAME = "Postslate";

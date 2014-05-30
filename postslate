@@ -16,19 +16,15 @@ jarname=postslate.jar
 
 while [ -n "$1" ]
 do
-	case $1 in
-	--cache)
-		psargs="${psargs} $1 $2"
-		shift
-		;;
-	--cache=*|-h)
-		psargs="${psargs} $1"
-		;;
-	*)
-		jvmargs="${jvmargs} $1"
-		;;
-	esac
-	shift
+    case $1 in
+        -Xmx*)
+	    jvmargs="${jvmargs} $1"
+	    ;;
+        *)
+	    psargs="${psargs} $1"
+	    ;;
+    esac
+    shift
 done
 
 # Allow running from the untarred package or from an installed location
