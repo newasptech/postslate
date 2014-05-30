@@ -31,12 +31,9 @@ public class WaveRenderer {
 		boolean needZero = true;
 		if (hdim.getTrimStartAsTime() > 0.0f) {
 			int h = 0;
-			if (hdim.getTrimStartInPixels() < LWIDTH) {
-				h = hdim.getTrimStartInPixels() / 2;
+			if (hdim.getTrimStartInPixels() < 2 * LWIDTH) {
+				h = hdim.getGraphStartInPixels();
 				needZero = false;
-			}
-			else if (hdim.getTrimStartInPixels() < 2 * LWIDTH) {
-				h = hdim.getTrimStartInPixels();
 			}
 			else
 				h = hdim.getTrimStartInPixels() - LWIDTH;
