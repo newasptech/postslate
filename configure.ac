@@ -1,4 +1,4 @@
-AC_INIT(postslate,0.1)
+AC_INIT(postslate,0.1.0)
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([postslate])
 
