@@ -53,9 +53,14 @@ public class AVFileRef implements Comparable<AVFileRef>, Serializable {
 	
 	public List<Event> getEvents(int eventCount, boolean scoreOrder) {
 		List<Event> events = new LinkedList<Event>();
-		for (int i = 0; i != eventCount; ++i) {
-			events.add(getEvents()[i]);
+		try {
+			for (int i = 0; i != eventCount; ++i) {
+				events.add(getEvents()[i]);
+			}
 		}
+		catch(ArrayIndexOutOfBoundsException aioob) {
+                    // return as many events as possible
+                }
 		if (scoreOrder)
 			Collections.sort(events);
 		else {
