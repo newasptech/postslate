@@ -5,8 +5,6 @@
  */
 package com.newasptech.postslate.gui;
 
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Iterator;
@@ -14,13 +12,18 @@ import java.util.Iterator;
 //import java.util.logging.Logger;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JComboBox;
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
 import javax.swing.JLabel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import com.jgoodies.forms.factories.FormFactory;
 import com.jgoodies.forms.layout.ColumnSpec;
@@ -28,6 +31,7 @@ import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.RowSpec;
 
 import com.newasptech.postslate.AVClip;
+import com.newasptech.postslate.Config;
 import com.newasptech.postslate.audio.Event;
 
 class SyncPanel extends BasePanel {
@@ -35,8 +39,8 @@ class SyncPanel extends BasePanel {
 	private static final long serialVersionUID = 1L;
 	private ButtonGroup audioEventOrder = new ButtonGroup();
 	private JSpinner spnCandidates = new JSpinner();
-	private JComboBox<Event> cboVideoClapTime = null;
-	private JComboBox<Event> cboAudioClapTime = null;
+	private JList<Event> lstVideoClapTime = null;
+	private JList<Event> lstAudioClapTime = null;
 	private JRadioButton rdbtnScore = null;
 	private JRadioButton rdbtnTime = null;
 	private WaveGraphPanel panelGraphVideo = null;
@@ -87,7 +91,7 @@ class SyncPanel extends BasePanel {
 		JLabel lblShow = new JLabel("Show");
 		add(lblShow, "2, 2");
 		
-		spnCandidates.setModel(new SpinnerNumberModel(10, 0, 200, 1));
+		spnCandidates.setModel(new SpinnerNumberModel(10, 10, getBackend().getConfig().ivalue(Config.SCAN_EVENTS), 1));
 		spnCandidates.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				updateEventLists();
@@ -132,9 +136,12 @@ class SyncPanel extends BasePanel {
 		panelGraphVideo = new WaveGraphPanel();
 		add(panelGraphVideo, "2, 6, 9, 1, fill, fill");
 		
-		cboVideoClapTime = new JComboBox<Event>();
-		cboVideoClapTime.setToolTipText("The time at which the clap event occurs, in seconds, with respect to the beginning of the Video source clip.");
-		add(cboVideoClapTime, "12, 6, 9, 1, fill, default");
+		lstVideoClapTime = new JList<Event>();
+                lstVideoClapTime.setModel(new DefaultListModel<Event>());
+                lstVideoClapTime.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		lstVideoClapTime.setToolTipText("The time at which the clap event occurs, in seconds, with respect to the beginning of the Video source clip.");
+                JScrollPane scrVideoClapTime = new JScrollPane(lstVideoClapTime);
+		add(scrVideoClapTime, "12, 5, 9, 2, fill, default");
 		
 		JLabel lblExternal = new JLabel("External Audio");
 		add(lblExternal, "2, 8, 3, 1");
@@ -142,38 +149,37 @@ class SyncPanel extends BasePanel {
 		panelGraphAudio = new WaveGraphPanel();
 		add(panelGraphAudio, "2, 10, 9, 1, fill, fill");
 		
-		cboAudioClapTime = new JComboBox<Event>();
-		cboAudioClapTime.setToolTipText("The time at which the clap event occurs, in seconds, with respect to the beginning of the Audio source clip.");
-		add(cboAudioClapTime, "12, 10, 9, 1, fill, default");
+		lstAudioClapTime = new JList<Event>();
+                lstAudioClapTime.setModel(new DefaultListModel<Event>());
+                lstAudioClapTime.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		lstAudioClapTime.setToolTipText("The time at which the clap event occurs, in seconds, with respect to the beginning of the Audio source clip.");
+                JScrollPane scrAudioClapTime = new JScrollPane(lstAudioClapTime);
+		add(scrAudioClapTime, "12, 9, 9, 2, fill, default");
 	}
 	
-	private ItemListener audioClapListener = null, videoClapListener = null;
-	private void disableComboItemListeners() {
+	private ListSelectionListener audioClapListener = null, videoClapListener = null;
+	private void disableListSelectionListeners() {
 		if (audioClapListener != null)
-			cboAudioClapTime.removeItemListener(audioClapListener);
+			lstAudioClapTime.removeListSelectionListener(audioClapListener);
 		if (videoClapListener != null)
-			cboVideoClapTime.removeItemListener(videoClapListener);
+			lstVideoClapTime.removeListSelectionListener(videoClapListener);
 		audioClapListener = null;
 		videoClapListener = null;
 	}
 	
-	private void enableComboItemListeners() {
-		audioClapListener = new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
-			    if (e.getStateChange() == ItemEvent.SELECTED) {
-			    	setNewClapPosition(false, (Event)e.getItem());
-			    }
+	private void enableListSelectionListeners() {
+		audioClapListener = new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+                            setNewClapPosition(false, lstAudioClapTime.getModel().getElementAt(e.getFirstIndex()));
 			}
 		};
-		cboAudioClapTime.addItemListener(audioClapListener);
-		videoClapListener = new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
-			    if (e.getStateChange() == ItemEvent.SELECTED) {
-			    	setNewClapPosition(true, (Event)e.getItem());
-			    }
+		lstAudioClapTime.addListSelectionListener(audioClapListener);
+		videoClapListener = new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+                            setNewClapPosition(true, lstVideoClapTime.getModel().getElementAt(e.getFirstIndex()));
 			}
 		};
-		cboVideoClapTime.addItemListener(videoClapListener);
+		lstVideoClapTime.addListSelectionListener(videoClapListener);
 	}
 	
 	public void setClips(AVClip vclip, AVClip aclip) {
@@ -195,25 +201,26 @@ class SyncPanel extends BasePanel {
 	private void updateEventLists() {
 		int eventCount = (Integer)getMainFrame().controls().getCandidates().getValue();
 		boolean scoreOrder = audioEventOrder.isSelected(rdbtnScore.getModel());
-		disableComboItemListeners();
-		updateEventList(videoClip, cboVideoClapTime, eventCount, scoreOrder);
-		updateEventList(audioClip, cboAudioClapTime, eventCount, scoreOrder);
-		enableComboItemListeners();
+		disableListSelectionListeners();
+		updateEventList(videoClip, lstVideoClapTime, eventCount, scoreOrder);
+		updateEventList(audioClip, lstAudioClapTime, eventCount, scoreOrder);
+		enableListSelectionListeners();
 	}
 	
-	private static void updateEventList(AVClip clip, JComboBox<Event> cbo, int eventCount, boolean scoreOrder) {
-		cbo.removeAllItems();
+	private static void updateEventList(AVClip clip, JList<Event> lst, int eventCount, boolean scoreOrder) {
+		DefaultListModel<Event> mdl = (DefaultListModel<Event>)lst.getModel();
+		mdl.removeAllElements();
 		if (clip == null) return;
 		for (Iterator<Event> pEvent = clip.getEvents(eventCount, scoreOrder).iterator(); pEvent.hasNext();) {
-			cbo.addItem(pEvent.next());
+			mdl.addElement(pEvent.next());
 		}
-		cbo.setSelectedIndex(eventIndex(clip.getOffset(), cbo));
+		lst.setSelectedIndex(eventIndex(clip.getOffset(), lst));
 	}
 	
-	private static int eventIndex(float clapPos, JComboBox<Event> cbo) {
+	private static int eventIndex(float clapPos, JList<Event> lst) {
 		int idx = -1, i = 0;
-		for (i = 0; i != cbo.getItemCount(); ++i) {
-			if (cbo.getItemAt(i).getTime() == clapPos) {
+		for (i = 0; i != lst.getModel().getSize(); ++i) {
+                    if (lst.getModel().getElementAt(i).getTime() == clapPos) {
 				idx = i;
 				break;
 			}
