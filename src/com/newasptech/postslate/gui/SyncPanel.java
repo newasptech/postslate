@@ -170,13 +170,15 @@ class SyncPanel extends BasePanel {
 	private void enableListSelectionListeners() {
 		audioClapListener = new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-                            setNewClapPosition(false, lstAudioClapTime.getModel().getElementAt(e.getFirstIndex()));
+				if (!e.getValueIsAdjusting())
+					setNewClapPosition(false, lstAudioClapTime.getModel().getElementAt(e.getFirstIndex()));
 			}
 		};
 		lstAudioClapTime.addListSelectionListener(audioClapListener);
 		videoClapListener = new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-                            setNewClapPosition(true, lstVideoClapTime.getModel().getElementAt(e.getFirstIndex()));
+				if (!e.getValueIsAdjusting())
+					setNewClapPosition(true, lstVideoClapTime.getModel().getElementAt(e.getFirstIndex()));
 			}
 		};
 		lstVideoClapTime.addListSelectionListener(videoClapListener);
