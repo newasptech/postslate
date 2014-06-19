@@ -157,6 +157,14 @@ class SyncPanel extends BasePanel {
 		add(scrAudioClapTime, "12, 9, 9, 2, fill, default");
 	}
 	
+	public JList<Event> getVideoClapList() {
+		return lstVideoClapTime;
+	}
+	
+	public JList<Event> getAudioClapList() {
+		return lstAudioClapTime;
+	}
+	
 	private ListSelectionListener audioClapListener = null, videoClapListener = null;
 	private void disableListSelectionListeners() {
 		if (audioClapListener != null)
@@ -170,15 +178,19 @@ class SyncPanel extends BasePanel {
 	private void enableListSelectionListeners() {
 		audioClapListener = new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				if (!e.getValueIsAdjusting())
-					setNewClapPosition(false, lstAudioClapTime.getModel().getElementAt(e.getFirstIndex()));
+				if (!e.getValueIsAdjusting()) {
+					int idx = lstAudioClapTime.isSelectedIndex(e.getFirstIndex()) ? e.getFirstIndex() : e.getLastIndex();
+					setNewClapPosition(false, lstAudioClapTime.getModel().getElementAt(idx));
+				}
 			}
 		};
 		lstAudioClapTime.addListSelectionListener(audioClapListener);
 		videoClapListener = new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				if (!e.getValueIsAdjusting())
-					setNewClapPosition(true, lstVideoClapTime.getModel().getElementAt(e.getFirstIndex()));
+				if (!e.getValueIsAdjusting()) {
+					int idx = lstVideoClapTime.isSelectedIndex(e.getFirstIndex()) ? e.getFirstIndex() : e.getLastIndex();
+					setNewClapPosition(true, lstVideoClapTime.getModel().getElementAt(idx));
+				}
 			}
 		};
 		lstVideoClapTime.addListSelectionListener(videoClapListener);
@@ -222,7 +234,7 @@ class SyncPanel extends BasePanel {
 	private static int eventIndex(float clapPos, JList<Event> lst) {
 		int idx = -1, i = 0;
 		for (i = 0; i != lst.getModel().getSize(); ++i) {
-                    if (lst.getModel().getElementAt(i).getTime() == clapPos) {
+            if (lst.getModel().getElementAt(i).getTime() == clapPos) {
 				idx = i;
 				break;
 			}

@@ -30,10 +30,12 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.JTextField;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import com.newasptech.postslate.AVDirRef;
 import com.newasptech.postslate.Config;
@@ -147,6 +149,7 @@ class FileViewPanel extends BasePanel {
 		listFiles.setRowSelectionAllowed(true);
 		listFiles.setShowGrid(false);
 		listFiles.addMouseListener(new AVFileTableListener());
+		listFiles.getSelectionModel().addListSelectionListener(new AVFileTableListener());
 		listFilesScrollPane = new JScrollPane(listFiles, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		listFiles.setFillsViewportHeight(true);
@@ -315,22 +318,25 @@ class FileViewPanel extends BasePanel {
 		}
 	}
 	
-	class AVFileTableListener extends MouseAdapter {
-		
+	class AVFileTableListener extends MouseAdapter implements ListSelectionListener {
 		public void mouseClicked(MouseEvent e) {
 			int row = listFiles.rowAtPoint(new Point(e.getX(), e.getY()));
 			int col = listFiles.columnAtPoint(new Point(e.getX(), e.getY()));
-			int selectOffMask = MouseEvent.CTRL_DOWN_MASK;
 			int stagOnMask = MouseEvent.CTRL_DOWN_MASK;
 			try {
-				_l.log(Level.FINE, "getModifiersEx() == " + e.getModifiersEx() + ", selectOffMask == " + selectOffMask + ", stagOnMask ==" + stagOnMask);
-				if ((e.getModifiersEx() & selectOffMask) != selectOffMask) {
-					getBackend().startWaveGraphs(getMainFrame().controls(), row);
-					getBackend().autoPlayIfNeeded(row, getMainFrame().controls());
-				}
-				else if ((e.getModifiersEx() & stagOnMask) == stagOnMask){
+				if ((e.getModifiersEx() & stagOnMask) == stagOnMask)
 					getBackend().toggleStag(getMainFrame().controls(), row, col);
-				}
+			}
+			catch(Exception ex) {
+				report(ex);
+			}
+		}
+		public void valueChanged(ListSelectionEvent e) {
+			if (e.getValueIsAdjusting()) return;
+			int row = listFiles.getSelectedRow();
+			try {
+				getBackend().startWaveGraphs(getMainFrame().controls(), row);
+				getBackend().autoPlayIfNeeded(row, getMainFrame().controls());
 			}
 			catch(Exception ex) {
 				report(ex);
