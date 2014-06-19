@@ -253,7 +253,7 @@ class Backend {
 				String view = c.getViewType().toString().toLowerCase();
 				_l.log(Level.FINE, "View "+vfp+" portion "+view);
 				Cmd.view(getCache(), vfp, view, (Float)c.getVideoShift().getValue(),
-						c.getMergeFormat().getText(), getConfig());
+						(String)c.getMergeFormat().getSelectedItem(), getConfig());
 			}
 		}
 	}
@@ -279,7 +279,8 @@ class Backend {
 		filePath.append(playFile);
 		try {
 			Cmd.view(getCache(), filePath.toString(), viewType.toString().toLowerCase(),
-					(Float)c.getVideoShift().getValue(), c.getMergeFormat().getText(), getConfig());
+					(Float)c.getVideoShift().getValue(), (String)c.getMergeFormat().getSelectedItem(),
+					getConfig());
 		}
 		catch(Exception ex) {
 			ex.printStackTrace(System.err);

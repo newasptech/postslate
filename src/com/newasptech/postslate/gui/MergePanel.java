@@ -18,9 +18,11 @@ import com.jgoodies.forms.factories.FormFactory;
 
 import com.newasptech.postslate.Cmd;
 import com.newasptech.postslate.Config;
+import com.newasptech.postslate.util.Subprocess;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JComboBox;
 import javax.swing.JTextField;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
@@ -39,7 +41,7 @@ class MergePanel extends BasePanel {
 	private JCheckBox chkSeparate = null;
 	private JSpinner spnVShift = null;
 	private JButton btnMerge = null;
-	private JTextField txtMergeFormat;
+	private JComboBox<String> cboMergeFormat;
 
 	/**
 	 * Create the panel.
@@ -111,7 +113,7 @@ class MergePanel extends BasePanel {
 						try {
 							Cmd.merge(getBackend().getCache(),
 								getMainFrame().controls().getCameraPath().getFile().getAbsolutePath(),
-								txtMergePath.getText(), txtMergeFormat.getText(),
+								txtMergePath.getText(), (String)cboMergeFormat.getSelectedItem(),
 								chkSeparate.isSelected(), chkRetainVideo.isSelected(), chkRetainAudio.isSelected(),
 								chkRetainData.isSelected(), (Float)(spnVShift.getValue()), null, null,
 								getBackend().getConfig(), getMainFrame().getProgressMonitor(0, 100, "Merging"));
@@ -134,12 +136,11 @@ class MergePanel extends BasePanel {
 		JLabel lblNewLabel_2 = new JLabel("Output As");
 		add(lblNewLabel_2, "2, 8, left, default");
 		
-		txtMergeFormat = new JTextField();
-		add(txtMergeFormat, "4, 8, fill, default");
-		txtMergeFormat.setColumns(10);
-		txtMergeFormat.setHorizontalAlignment(JTextField.CENTER);
-		txtMergeFormat.setText(getBackend().getConfig().getProperty(Config.MERGE_FORMAT));
-		txtMergeFormat.setToolTipText("The output container format: avi, mov, etc.");
+		cboMergeFormat = new JComboBox<String>();
+		add(cboMergeFormat, "4, 8, fill, default");
+		cboMergeFormat.setToolTipText("The output container format: avi, mov, etc.");
+		setMergeFormats();
+		cboMergeFormat.setSelectedItem(getBackend().getConfig().getProperty(Config.MERGE_FORMAT));
 		
 		JLabel lblMergePath = new JLabel("to path");
 		add(lblMergePath, "4, 10, right, default");
@@ -176,8 +177,8 @@ class MergePanel extends BasePanel {
 		return spnVShift;
 	}
 	
-	public JTextField getMergeFormat() {
-		return txtMergeFormat;
+	public JComboBox<String> getMergeFormat() {
+		return cboMergeFormat;
 	}
 	
 	public DirectorySelectionAdapter getMergePath() {
@@ -198,5 +199,29 @@ class MergePanel extends BasePanel {
 	
 	public JCheckBox getSeparate() {
 		return chkSeparate;
+	}
+	
+	private void setMergeFormats() {
+		String formats = null;
+		try {
+			formats = Subprocess.checkOutput(new String[]{"ffmpeg", "-formats"});
+		}
+		catch(Exception ex) {
+			report(ex);
+			return;
+		}
+		boolean passedHeader = false;
+		for (String _line : formats.split("\n")) {
+			String line = _line.trim();
+			if (!passedHeader) {
+				if (line.contentEquals("--"))
+					passedHeader = true;
+				continue;
+			}
+			String[] tokens = line.split("\\s");
+			String de = tokens[0], format = tokens[1];
+			if (de.endsWith("E"))
+				cboMergeFormat.addItem(format);
+		}
 	}
 }

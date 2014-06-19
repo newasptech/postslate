@@ -43,6 +43,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.InputMap;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -56,7 +57,6 @@ import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -355,7 +355,7 @@ public class MainFrame extends JFrame {
 		public WaveGraphPanel getVideoGraphPanel() { return panelSync.getVideoGraphPanel(); }
 		public WaveGraphPanel getAudioGraphPanel() { return panelSync.getAudioGraphPanel(); }
 		public SyncPanel getSyncPanel() { return panelSync; }
-		public JTextField getMergeFormat() { return panelMerge.getMergeFormat(); }
+		public JComboBox<String> getMergeFormat() { return panelMerge.getMergeFormat(); }
 		public JSpinner getVideoShift() { return panelMerge.getVideoShift(); }
 		public boolean getOrderByScore() { return panelSync.getOrderByScore(); }
 		public DirectorySelectionAdapter getMergePath() { return panelMerge.getMergePath(); }
@@ -370,7 +370,7 @@ public class MainFrame extends JFrame {
 			p.setProperty(CAMERA_PATH, getCameraPath().getTextField().getText());
 			p.setProperty(VIEW_TYPE, getViewType().toString());
 			p.setProperty(CANDIDATES, getCandidates().getValue().toString());
-			p.setProperty(MERGE_FORMAT, getMergeFormat().getText());
+			p.setProperty(MERGE_FORMAT, (String)getMergeFormat().getSelectedItem());
 			p.setProperty(VIDEO_SHIFT, ((Float)getVideoShift().getValue()).toString());
 			p.setProperty(ORDER_BY_SCORE, Boolean.toString(getOrderByScore()));
 			p.setProperty(MERGE_PATH, getMergePath().getTextField().getText());
@@ -389,7 +389,7 @@ public class MainFrame extends JFrame {
 				getCameraPath().getTextField().setText(p.getProperty(CAMERA_PATH));
 				setViewType(ViewType.fromString(p.getProperty(VIEW_TYPE)));
 				getCandidates().setValue(new Integer(p.getProperty(CANDIDATES)));
-				getMergeFormat().setText(p.getProperty(MERGE_FORMAT));
+				getMergeFormat().setSelectedItem(p.getProperty(MERGE_FORMAT));
 				getVideoShift().setValue(new Float(p.getProperty(VIDEO_SHIFT)));
 				panelSync.setOrderByScore(new Boolean(p.getProperty(ORDER_BY_SCORE)));
 				getMergePath().getTextField().setText(p.getProperty(MERGE_PATH));
