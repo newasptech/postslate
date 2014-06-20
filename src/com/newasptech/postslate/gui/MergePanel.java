@@ -18,7 +18,6 @@ import com.jgoodies.forms.factories.FormFactory;
 
 import com.newasptech.postslate.Cmd;
 import com.newasptech.postslate.Config;
-import com.newasptech.postslate.util.Subprocess;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -202,26 +201,9 @@ class MergePanel extends BasePanel {
 	}
 	
 	private void setMergeFormats() {
-		String formats = null;
-		try {
-			formats = Subprocess.checkOutput(new String[]{"ffmpeg", "-formats"});
-		}
-		catch(Exception ex) {
-			report(ex);
-			return;
-		}
-		boolean passedHeader = false;
-		for (String _line : formats.split("\n")) {
-			String line = _line.trim();
-			if (!passedHeader) {
-				if (line.contentEquals("--"))
-					passedHeader = true;
-				continue;
-			}
-			String[] tokens = line.split("\\s");
-			String de = tokens[0], format = tokens[1];
-			if (de.endsWith("E"))
-				cboMergeFormat.addItem(format);
+		Backend b = getBackend();
+		for (String format : b.getAVEngine(b.getConfig()).outputFormats()) {
+			cboMergeFormat.addItem(format);
 		}
 	}
 }

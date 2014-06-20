@@ -185,6 +185,32 @@ public class AVEngineFFmpeg implements AVEngine {
 		return ffmpegVoodoo(vdir, vinput, adir, ainput, codecArgs, outputPath);
 	}
 	
+	public String[] outputFormats() {
+		List<String> mfList = new LinkedList<String>();
+		String formats = null;
+		try {
+			formats = Subprocess.checkOutput(new String[]{"ffmpeg", "-formats"});
+		}
+		catch(Exception ex) {
+			_l.log(Level.SEVERE, "An error occurred while checking output formats", ex);
+			return null;
+		}
+		boolean passedHeader = false;
+		for (String _line : formats.split("\n")) {
+			String line = _line.trim();
+			if (!passedHeader) {
+				if (line.contentEquals("--"))
+					passedHeader = true;
+				continue;
+			}
+			String[] tokens = line.split("\\s");
+			String de = tokens[0], format = tokens[1];
+			if (de.endsWith("E"))
+				mfList.add(format);
+		}
+		return mfList.toArray(new String[]{});
+	}
+	
 	private static String[] REQUIRED_PROGS = new String[]{Subprocess.execName("ffmpeg"),
 		Subprocess.execName("ffprobe")}; 
 	private static String URL = "http://ffmpeg.org/download.html";

@@ -30,6 +30,9 @@ public interface AVEngine {
 	/** Play a set of AV file clips */
 	void play(AVDirRef inputDir, AVClip input, int width, int height);
 	
+	/** Return a list of output container types */
+	String[] outputFormats();
+	
 	/** Check to make sure that the components/libraries needed by the Engine are present and working. */
 	void check() throws RequiredComponentMissing, OptionalComponentMissing, ComponentCheckFailed;
 	class ComponentCheckFailed extends Exception {
