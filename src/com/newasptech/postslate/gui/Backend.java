@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.CancellationException;
 
+import javax.swing.JFileChooser;
 import javax.swing.ProgressMonitor;
 import javax.swing.JTable;
 
@@ -285,5 +286,47 @@ class Backend {
 		catch(Exception ex) {
 			ex.printStackTrace(System.err);
 		}
+	}
+
+	public static Backend loadFromCache(String cacheDir, MainFrame mf) throws IOException {
+		boolean needTry = true;
+		Backend backend = null;
+		while (needTry) {
+			try {
+				backend = new Backend(cacheDir);
+				needTry = false;
+			}
+			catch(AVEngine.RequiredComponentMissing rcm) {
+				mf.report(rcm);
+				JFileChooser jfc = new JFileChooser();
+				String dialogTitle = "Select the Folder Containing " + rcm.getComponent(),
+						buttonTitle = "Select";
+				jfc.setDialogTitle(dialogTitle);
+				jfc.setDialogType(JFileChooser.CUSTOM_DIALOG);
+				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				jfc.setFileFilter(jfc.getAcceptAllFileFilter());
+				jfc.setMultiSelectionEnabled(false);
+				if (JFileChooser.APPROVE_OPTION == jfc.showDialog(mf, buttonTitle)) {
+					File dir = jfc.getSelectedFile();
+					Config cfg = new Config(cacheDir);
+					StringBuilder newPath = new StringBuilder(dir.getPath());
+					String path = cfg.getProperty(Config.SEARCH_PATH);
+					if (path.length() > 0) {
+						newPath.append(File.pathSeparator);
+						newPath.append(path);
+					}
+					cfg.setProperty(Config.SEARCH_PATH, newPath.toString());
+					cfg.store(cacheDir);
+				}
+				else {
+					System.exit(4);
+				}
+			}
+			catch(Exception e) {
+				mf.report(e);
+				System.exit(4);
+			}
+		}
+		return backend;
 	}
 }

@@ -9,11 +9,8 @@ import com.jgoodies.forms.factories.FormFactory;
 import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.RowSpec;
-import com.newasptech.postslate.AVEngine;
 import com.newasptech.postslate.Cache;
 import com.newasptech.postslate.Cmd;
-import com.newasptech.postslate.Config;
-import com.newasptech.postslate.audio.Event;
 import com.newasptech.postslate.gui.BasePanel.ViewType;
 import com.newasptech.postslate.util.Misc;
 
@@ -37,22 +34,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Properties;
 
-import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.InputMap;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.JSpinner;
@@ -61,7 +53,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 public class MainFrame extends JFrame {
-	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.Frame");
+	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.MainFrame");
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane = null;
 	private ProgressMonitor progressBar = null;
@@ -102,7 +94,7 @@ public class MainFrame extends JFrame {
 				FormFactory.RELATED_GAP_ROWSPEC,
 				FormFactory.DEFAULT_ROWSPEC,}));
 		
-		backend = loadBackend(cacheDir);
+		backend = Backend.loadFromCache(cacheDir, this);
 		panelFileView = new FileViewPanel(this, backend);
 		contentPane.add(panelFileView, "2, 2, 1, 5, fill, fill");
 		
@@ -136,7 +128,7 @@ public class MainFrame extends JFrame {
 				}
 			}
 		});
-		setupKeyListeners();
+		HotKeyAction.attachToPanel(contentPane, backend, controls());
 		
 		Image windowIcon = slateImage(); 
 		setIconImage(windowIcon);
@@ -163,99 +155,6 @@ public class MainFrame extends JFrame {
 			}
 		}
 	}
-	
-	private static final String NEXT_CLIP = "NextClip", PREV_CLIP = "PrevClip",
-			NEXT_VIDEO_CLAP = "NextVideoClap", PREV_VIDEO_CLAP = "PrevVideoClap",
-			NEXT_AUDIO_CLAP = "NextAudioClap", PREV_AUDIO_CLAP = "PrevAudioClap",
-			PLAY = "Play", PLAY_CLAP = "PlayClap", PLAY_FULL = "PlayFull",
-			PLAY_VIDEO = "PlayVideo", PLAY_AUDIO = "PlayAudio";
-	private void setupKeyListeners() {
-		InputMap im = contentPane.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, ActionEvent.ALT_MASK, false), NEXT_CLIP);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, ActionEvent.ALT_MASK, false), PREV_CLIP);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ActionEvent.ALT_MASK, false), NEXT_VIDEO_CLAP);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ActionEvent.ALT_MASK, false), PREV_VIDEO_CLAP);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ActionEvent.ALT_MASK | ActionEvent.SHIFT_MASK, false), NEXT_AUDIO_CLAP);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ActionEvent.ALT_MASK | ActionEvent.SHIFT_MASK, false), PREV_AUDIO_CLAP);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.ALT_MASK, false), PLAY);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK, false), PLAY_CLAP);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F, ActionEvent.ALT_MASK, false), PLAY_FULL);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.ALT_MASK, false), PLAY_VIDEO);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.ALT_MASK, false), PLAY_AUDIO);
-		String[] actionTags = new String[]{ NEXT_CLIP, PREV_CLIP, NEXT_VIDEO_CLAP, PREV_VIDEO_CLAP,
-				NEXT_AUDIO_CLAP, PREV_AUDIO_CLAP, PLAY, PLAY_CLAP, PLAY_FULL, PLAY_VIDEO, PLAY_AUDIO };
-		ActionMap am = contentPane.getActionMap();
-		for (String tag : actionTags) {
-			am.put(tag, new HotKeyAction(tag));
-		}
-	}
-	
-	class HotKeyAction extends AbstractAction {
-		private static final long serialVersionUID = 1L;
-		public HotKeyAction(String name) {
-			super(name);
-		}
-		public void actionPerformed(ActionEvent e) {
-			String n = (String)getValue(NAME);
-			if (n.contentEquals(NEXT_CLIP)) {
-				_l.fine("Next clip");
-				changeClip(true);
-			}
-			else if (n.contentEquals(PREV_CLIP)) {
-				_l.fine("Previous clip");
-				changeClip(false);
-			}
-			else if (n.contentEquals(NEXT_VIDEO_CLAP)) {
-				_l.fine("Next video clap");
-				adjustClap(true, 1);
-			}
-			else if (n.contentEquals(PREV_VIDEO_CLAP)) {
-				_l.fine("Previous video clap");
-				adjustClap(true, -1);
-			}
-			else if (n.contentEquals(NEXT_AUDIO_CLAP)) {
-				_l.fine("Next audio clap");
-				adjustClap(false, 1);
-			}
-			else if (n.contentEquals(PREV_AUDIO_CLAP)) {
-				_l.fine("Previous audio clap");
-				adjustClap(false, -1);
-			}
-			else if (n.contentEquals(PLAY)) {
-				_l.fine("Play");
-				backend.play(controls().getViewType(), controls());
-			}
-			else if (n.contentEquals(PLAY_CLAP)) {
-				_l.fine("Select play clap");
-				controls().setViewType(PreviewPanel.ViewType.CLAP);
-			}
-			else if (n.contentEquals(PLAY_FULL)) {
-				_l.fine("Select play full");
-				controls().setViewType(PreviewPanel.ViewType.FULL);
-			}
-			else if (n.contentEquals(PLAY_VIDEO)) {
-				_l.fine("Select play video");
-				controls().setViewType(PreviewPanel.ViewType.VIDEO);
-			}
-			else if (n.contentEquals(PLAY_AUDIO)) {
-				_l.fine("Select play audio");
-				controls().setViewType(PreviewPanel.ViewType.AUDIO);
-			}
-		}
-		private void adjustClap(boolean isVideo, int delta) {
-			JList<Event> l = isVideo ? controls().getSyncPanel().getVideoClapList() 
-					: controls().getSyncPanel().getAudioClapList();
-			int newIdx = l.getSelectedIndex() + delta;
-			if (newIdx >= 0 && newIdx < l.getModel().getSize())
-				l.setSelectedIndex(newIdx);
-		}
-		private void changeClip(boolean next) {
-			JTable flist = controls().getFileList();
-			int newRow = flist.getSelectedRow() + (next ? 1 : -1);
-			if (newRow >= 0 && newRow < flist.getRowCount())
-				flist.changeSelection(newRow, 0, false, true);
-		}
-	}
 
 	private void setupMenu() {
 		ActionListener menuListener = new MenuActionListener(this);
@@ -272,48 +171,6 @@ public class MainFrame extends JFrame {
 		menu.add(menuItem);
 		
 		setJMenuBar(bar);
-	}
-	
-	private Backend loadBackend(String cacheDir) throws IOException {
-		boolean needTry = true;
-		Backend backend = null;
-		while (needTry) {
-			try {
-				backend = new Backend(cacheDir);
-				needTry = false;
-			}
-			catch(AVEngine.RequiredComponentMissing rcm) {
-				report(rcm);
-				JFileChooser jfc = new JFileChooser();
-				String dialogTitle = "Select the Folder Containing " + rcm.getComponent(),
-						buttonTitle = "Select";
-				jfc.setDialogTitle(dialogTitle);
-				jfc.setDialogType(JFileChooser.CUSTOM_DIALOG);
-				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				jfc.setFileFilter(jfc.getAcceptAllFileFilter());
-				jfc.setMultiSelectionEnabled(false);
-				if (JFileChooser.APPROVE_OPTION == jfc.showDialog(this, buttonTitle)) {
-					File dir = jfc.getSelectedFile();
-					Config cfg = new Config(cacheDir);
-					StringBuilder newPath = new StringBuilder(dir.getPath());
-					String path = cfg.getProperty(Config.SEARCH_PATH);
-					if (path.length() > 0) {
-						newPath.append(File.pathSeparator);
-						newPath.append(path);
-					}
-					cfg.setProperty(Config.SEARCH_PATH, newPath.toString());
-					cfg.store(cacheDir);
-				}
-				else {
-					System.exit(4);
-				}
-			}
-			catch(Exception e) {
-				report(e);
-				System.exit(4);
-			}
-		}
-		return backend;
 	}
 	
 	public void report(Exception e) {
