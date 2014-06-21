@@ -13,8 +13,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.CancellationException;
 
+import java.awt.Point;
 import javax.swing.JFileChooser;
 import javax.swing.ProgressMonitor;
+import javax.swing.JPanel;
 import javax.swing.JTable;
 
 import com.newasptech.postslate.AVClip;
@@ -97,14 +99,6 @@ class Backend {
 	
 	public AVEngine getAVEngine(Config cfg) {
 		return Cmd.newAVEngine(cfg);
-	}
-	
-	private String getFilePath(int row, int col, MainFrame.Controls c) {
-		Workspace w = getWorkspace();
-		StringBuilder filePath = new StringBuilder(((col == 0) ? w.getVideoDir() : w.getAudioDir()).getPath());
-		filePath.append(System.getProperty("file.separator"));
-		filePath.append((String)c.getFileList().getValueAt(row, col));
-		return filePath.toString();
 	}
 
 	public static final String STAG_MATCH = "";
@@ -242,46 +236,55 @@ class Backend {
 				acd.clip.getOffset(), aStartGraphOffset, graphTimeSpan);
 	}
 	
-	public void autoPlayIfNeeded(int row, MainFrame.Controls c) throws Exception {
-		if (row < 0)
-			row = c.getFileList().getSelectedRow();
-		if (c.getAutoView().isSelected()) {
-			int vcol = 0, acol=1;
-			String vfp = getFilePath(row, vcol, c);
-			String afn = (String)c.getFileList().getValueAt(row, acol),
-					vfn = (String)c.getFileList().getValueAt(row, vcol);
-			if (vfn.length() > 0 && afn.length() > 0) {
-				String view = c.getViewType().toString().toLowerCase();
-				_l.log(Level.FINE, "View "+vfp+" portion "+view);
-				Cmd.view(getCache(), vfp, view, (Float)c.getVideoShift().getValue(),
-						(String)c.getMergeFormat().getSelectedItem(), getConfig());
-			}
-		}
+	private String getFilePath(int row, int col, MainFrame.Controls c) {
+		Workspace w = getWorkspace();
+		StringBuilder filePath = new StringBuilder(((col == 0) ? w.getVideoDir() : w.getAudioDir()).getPath());
+		filePath.append(System.getProperty("file.separator"));
+		filePath.append((String)c.getFileList().getValueAt(row, col));
+		return filePath.toString();
 	}
 	
-	public void play(PreviewPanel.ViewType viewType, MainFrame.Controls c) {
-		int row = c.getFileList().getSelectedRow();
-		String playFile = null, playDir = null;
-		switch(viewType) {
-		case CLAP:
-		case FULL:
-		case VIDEO:
-			playFile = (String)c.getFileList().getValueAt(row, 0);
-			playDir = wksp.getVideoDir().getPath();
-			break;
-		case AUDIO:
-			playFile = (String)c.getFileList().getValueAt(row, 1);
-			playDir = wksp.getAudioDir().getPath();
-			break;
-		}
+	/** Return the selected video/audio file, or null if none is currently selected.
+	 * @param row a row index from the file list, or -1 to use the current selection
+	 * @param col the column number of the video/audio file (0 or 1)
+	 * @param c Controls reference
+	 *  */
+	private String getSelectedFilePath(int row, int col, MainFrame.Controls c) {
+		if (row < 0) row = c.getFileList().getSelectedRow();
+		String fileName = (String)c.getFileList().getValueAt(row, col);
+		if (fileName.contentEquals(STAG_MATCH))
+			return null;
+		return getFilePath(row, col, c);
+	}
+	
+	/** All GUI media-play calls get funneled down to this. */
+	private void doPlay(String filePath, MainFrame.Controls c) throws Exception {
+		String viewType = c.getViewType().toString().toLowerCase();
+		_l.log(Level.FINE, "View " + filePath + " portion " + viewType);
+		JPanel vp = c.getViewPanel();
+		Point lhCorner = vp.getLocationOnScreen();
+		int width = vp.getWidth(), height = vp.getHeight(),
+				x = (int)lhCorner.getX(), y = (int)lhCorner.getY();
+		Cmd.view(getCache(), filePath, viewType, (Float)c.getVideoShift().getValue(),
+				(String)c.getMergeFormat().getSelectedItem(), getConfig(),
+				width, height, x, y);
+	}
+	
+	public void autoPlayIfNeeded(int row, MainFrame.Controls c) throws Exception {
+		if (!c.getAutoView().isSelected()) return;
+		int vcol = 0, acol = 1;
+		String vpath = getSelectedFilePath(row, vcol, c),
+				apath = getSelectedFilePath(row, acol, c);
+		if (vpath == null || apath == null) return;
+		doPlay(vpath, c);
+	}
+	
+	public void play(MainFrame.Controls c) {
+		int col = c.getViewType() == PreviewPanel.ViewType.AUDIO ? 1 : 0;
+		String playFile = getSelectedFilePath(-1, col, c);
 		if (playFile == null) return;
-		StringBuilder filePath = new StringBuilder(playDir);
-		filePath.append(System.getProperty("file.separator"));
-		filePath.append(playFile);
 		try {
-			Cmd.view(getCache(), filePath.toString(), viewType.toString().toLowerCase(),
-					(Float)c.getVideoShift().getValue(), (String)c.getMergeFormat().getSelectedItem(),
-					getConfig());
+			doPlay(playFile, c);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace(System.err);

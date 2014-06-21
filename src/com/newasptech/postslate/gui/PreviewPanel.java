@@ -32,19 +32,19 @@ class PreviewPanel extends BasePanel {
 		super(f, m);
 		setLayout(new FormLayout(new ColumnSpec[] {
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("40dlu"),
+				ColumnSpec.decode("min(35dlu;default)"),
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("35dlu"),
+				ColumnSpec.decode("min(25dlu;default)"),
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("35dlu"),
+				ColumnSpec.decode("min(25dlu;default)"),
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("35dlu"),
+				ColumnSpec.decode("min(30dlu;default)"),
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("35dlu"),
+				ColumnSpec.decode("min(30dlu;default)"),
 				FormFactory.RELATED_GAP_COLSPEC,
 				ColumnSpec.decode("min:grow"),
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("35dlu"),
+				ColumnSpec.decode("min(30dlu;default)"),
 				FormFactory.RELATED_GAP_COLSPEC,},
 			new RowSpec[] {
 				FormFactory.RELATED_GAP_ROWSPEC,
@@ -54,8 +54,7 @@ class PreviewPanel extends BasePanel {
 		JButton btnView = new JButton("Play");
 		btnView.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
-				getBackend().play(ViewType.fromString( viewType.getSelection().getActionCommand() ),
-						getMainFrame().controls());
+				getBackend().play(getMainFrame().controls());
 			}
 		});
 		btnView.setToolTipText("Preview the item selected at right.");

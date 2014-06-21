@@ -9,7 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 //import java.util.logging.Level;
-//import java.util.logging.Logger;
+import java.util.logging.Logger;
 
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.ColumnSpec;
@@ -30,7 +30,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 class MergePanel extends BasePanel {
-	//private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.MergePanel");
+	@SuppressWarnings("unused")
+	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.MergePanel");
 	private static final long serialVersionUID = 1L;
 	private JTextField txtMergePath;
 	private DirectorySelectionAdapter dsaMergePath = null;
@@ -49,7 +50,9 @@ class MergePanel extends BasePanel {
 		super(f, m);
 		setLayout(new FormLayout(new ColumnSpec[] {
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("50dlu"),
+				ColumnSpec.decode("45dlu"),
+				FormFactory.RELATED_GAP_COLSPEC,
+				ColumnSpec.decode("25dlu"),
 				FormFactory.RELATED_GAP_COLSPEC,
 				ColumnSpec.decode("30dlu:grow"),
 				FormFactory.RELATED_GAP_COLSPEC,
@@ -59,10 +62,7 @@ class MergePanel extends BasePanel {
 				FormFactory.RELATED_GAP_COLSPEC,
 				ColumnSpec.decode("30dlu"),
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("default:grow"),
-				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("30dlu"),
-				FormFactory.RELATED_GAP_COLSPEC,},
+				},
 			new RowSpec[] {
 				FormFactory.RELATED_GAP_ROWSPEC,
 				FormFactory.DEFAULT_ROWSPEC,
@@ -82,15 +82,15 @@ class MergePanel extends BasePanel {
 		
 		chkRetainVideo = new JCheckBox("Extra video");
 		chkRetainVideo.setToolTipText("Copy any secondary video stream to the merged output");
-		add(chkRetainVideo, "6, 2, 5, 1");
+		add(chkRetainVideo, "6, 2");
 		
 		chkRetainData = new JCheckBox("Data streams");
 		chkRetainData.setToolTipText("Copy data streams to the merged output.");
-		add(chkRetainData, "12, 2, 3, 1");
+		add(chkRetainData, "8, 2, 3, 1");
 		
 		chkSeparate = new JCheckBox("Separate A/V outputs");
 		chkSeparate.setToolTipText("When this option is checked, synchronize and trim the external audio with the camera video, but output them a separate files of identical length.");
-		add(chkSeparate, "2, 4, 3, 1");
+		add(chkSeparate, "2, 4, 5, 1");
 		
 		JLabel lblNewLabel = new JLabel("Shift video by constant offset of ");
 		add(lblNewLabel, "2, 6, 5, 1");
@@ -136,7 +136,7 @@ class MergePanel extends BasePanel {
 		add(lblNewLabel_2, "2, 8, left, default");
 		
 		cboMergeFormat = new JComboBox<String>();
-		add(cboMergeFormat, "4, 8, fill, default");
+		add(cboMergeFormat, "4, 8, 3, 1, fill, default");
 		cboMergeFormat.setToolTipText("The output container format: avi, mov, etc.");
 		setMergeFormats();
 		cboMergeFormat.setSelectedItem(getBackend().getConfig().getProperty(Config.MERGE_FORMAT));
@@ -145,7 +145,7 @@ class MergePanel extends BasePanel {
 		add(lblMergePath, "4, 10, right, default");
 		
 		txtMergePath = new JTextField();
-		add(txtMergePath, "6, 10, 7, 1, fill, default");
+		add(txtMergePath, "6, 10, 5, 1, fill, default");
 		txtMergePath.setToolTipText("Output the synchronized/trimmed/merged clips to this path/folder.");
 		txtMergePath.setColumns(10);
 		txtMergePath.getDocument().addDocumentListener(new DocumentListener() {
@@ -164,11 +164,11 @@ class MergePanel extends BasePanel {
 			public void insertUpdate(DocumentEvent e) { u(); }
 			public void removeUpdate(DocumentEvent e) { u(); }
 		});
-				
+		
 		JButton btnSelectMergePath = new JButton("...");
 		btnSelectMergePath.setToolTipText("Click to select the output path/folder.");
-		add(btnSelectMergePath, "14, 10");
-				
+		add(btnSelectMergePath, "12, 10");
+		
 		dsaMergePath = new DirectorySelectionAdapter(txtMergePath, btnSelectMergePath, this);
 	}
 	

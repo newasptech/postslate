@@ -17,6 +17,7 @@ import com.newasptech.postslate.util.Misc;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
+import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -59,8 +60,9 @@ public class MainFrame extends JFrame {
 	private ProgressMonitor progressBar = null;
 	private FileViewPanel panelFileView = null;
 	private SyncPanel panelSync = null;
-	private PreviewPanel panelPreview = null;
+	private PreviewPanel panelPreviewCtl = null;
 	private MergePanel panelMerge = null;
+	private JPanel panelView = null;
 	private File propertiesFile;
 	private Backend backend;
 
@@ -86,26 +88,32 @@ public class MainFrame extends JFrame {
 				ColumnSpec.decode("default:grow"),},
 			new RowSpec[] {
 				FormFactory.RELATED_GAP_ROWSPEC,
+				RowSpec.decode("min(50dlu;default)"),
+				FormFactory.RELATED_GAP_ROWSPEC,
 				RowSpec.decode("min(250dlu;default):grow"),
 				FormFactory.RELATED_GAP_ROWSPEC,
-				FormFactory.MIN_ROWSPEC,
+				RowSpec.decode("min(100dlu;default):grow"),
 				FormFactory.RELATED_GAP_ROWSPEC,
-				FormFactory.MIN_ROWSPEC,
+				RowSpec.decode("min(100dlu;default)"),
 				FormFactory.RELATED_GAP_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,}));
+				}));
 		
 		backend = Backend.loadFromCache(cacheDir, this);
 		panelFileView = new FileViewPanel(this, backend);
 		contentPane.add(panelFileView, "2, 2, 1, 5, fill, fill");
 		
-		panelSync = new SyncPanel(this, backend);
-		contentPane.add(panelSync, "4, 2, fill, fill");
-		
-		panelPreview = new PreviewPanel(this, backend);
-		contentPane.add(panelPreview, "4, 4, fill, fill");
-		
 		panelMerge = new MergePanel(this, backend);
-		contentPane.add(panelMerge, "4, 6, fill, fill");
+		contentPane.add(panelMerge, "2, 8, fill, fill");
+		
+		panelPreviewCtl = new PreviewPanel(this, backend);
+		contentPane.add(panelPreviewCtl, "4, 2, fill, fill");
+		
+		panelView = new JPanel();
+		panelView.setBackground(new Color(10, 10, 10)); // black background
+		contentPane.add(panelView, "4, 4, fill, fill");
+		
+		panelSync = new SyncPanel(this, backend);
+		contentPane.add(panelSync, "4, 6, 1, 3, fill, fill");
 		
 		if (propertiesFile.exists()) {
 			Properties p = new Properties();
@@ -202,12 +210,12 @@ public class MainFrame extends JFrame {
 	}
 	
 	public class Controls {
-		public JCheckBox getAutoView() { return panelPreview.getAutoView(); }
+		public JCheckBox getAutoView() { return panelPreviewCtl.getAutoView(); }
 		public DirectorySelectionAdapter getCameraPath() { return panelFileView.getCameraPath(); }
 		public DirectorySelectionAdapter getExtAudioPath() { return panelFileView.getExtAudioPath(); }
 		public JTable getFileList() { return panelFileView.getFileList(); }
-		public PreviewPanel.ViewType getViewType() { return panelPreview.getViewType(); }
-		public void setViewType(PreviewPanel.ViewType vt) { panelPreview.setViewType(vt); }
+		public PreviewPanel.ViewType getViewType() { return panelPreviewCtl.getViewType(); }
+		public void setViewType(PreviewPanel.ViewType vt) { panelPreviewCtl.setViewType(vt); }
 		public JSpinner getCandidates() { return panelSync.getCandidates(); }
 		public WaveGraphPanel getVideoGraphPanel() { return panelSync.getVideoGraphPanel(); }
 		public WaveGraphPanel getAudioGraphPanel() { return panelSync.getAudioGraphPanel(); }
@@ -220,6 +228,7 @@ public class MainFrame extends JFrame {
 		public JCheckBox getRetainVideo() { return panelMerge.getRetainVideo(); }
 		public JCheckBox getRetainData() { return panelMerge.getRetainData(); }
 		public JCheckBox getSeparate() { return panelMerge.getSeparate(); }
+		public JPanel getViewPanel() { return panelView; }
 
 		public Properties asProperties() {
 			Properties p = new Properties();

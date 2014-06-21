@@ -18,11 +18,11 @@ import java.util.logging.Logger;
 import com.newasptech.postslate.util.Subprocess;
 import com.newasptech.postslate.util.Text;
 
-public class AVEngineFFmpeg implements AVEngine {
+public class AVEngineFFmpegMPV implements AVEngine {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.AVEngineFFmpeg");
 	private Config cfg;
 	
-	public AVEngineFFmpeg(Config _cfg) {
+	public AVEngineFFmpegMPV(Config _cfg) {
 		cfg = _cfg;
 	}
 	
@@ -79,22 +79,30 @@ public class AVEngineFFmpeg implements AVEngine {
 		return metaOut;
 	}
 	
-	public void play(AVDirRef inputDir, AVClip input, int width, int height) {
-		StringBuffer scaleArg = new StringBuffer("scale=");
-		scaleArg.append(width);
-		scaleArg.append(":");
-		scaleArg.append(height);
+	public void play(AVDirRef inputDir, AVClip input, int width, int height, int x, int y) {
+		List<String> cmd = new LinkedList<String>();
+		cmd.add(Subprocess.execName("mpv"));
+		cmd.add("--no-config");
+		cmd.add("--ontop");
+		cmd.add("--no-border");
+		cmd.add("--no-osd-bar");
+		cmd.add("--quiet");
+		cmd.add("--stop-screensaver");
+		if (width > 0 && height > 0)
+			cmd.add(String.format("--autofit-larger=%dx%d", width, height));
+		if (x >= 0 && y >= 0)
+			cmd.add(String.format("--geometry=%d:%d", x, y));
 		String inputFilePath = inputDir.getPath() + System.getProperty("file.separator") + input.getName();
 		_l.log(Level.FINE, "Play AV clip " + inputFilePath + " with duration " + input.getDuration());
-		String[] cmd = { Subprocess.execName("ffplay"),
-				"-x", cfg.getProperty(Config.PREVIEW_WIDTH),
-				"-y", cfg.getProperty(Config.PREVIEW_HEIGHT),
-				"-window_title", "Preview",
-				"-autoexit",
-				"-vf", scaleArg.toString(),
-				inputFilePath
-			};
-		Subprocess p = new Subprocess(cmd, cfg.getProperty(Config.SEARCH_PATH));
+		cmd.add(inputFilePath);
+		String[] cmdArray = cmd.toArray(new String[]{});
+		StringBuilder msg = new StringBuilder();
+		for (String arg : cmdArray) {
+			msg.append(arg);
+			msg.append(" ");
+		}
+		_l.log(Level.FINE, msg.toString());
+		Subprocess p = new Subprocess(cmdArray, cfg.getProperty(Config.SEARCH_PATH));
 		try {
 			p.run(Subprocess.timeout(input.getDuration()));
 		}
@@ -211,17 +219,18 @@ public class AVEngineFFmpeg implements AVEngine {
 		return mfList.toArray(new String[]{});
 	}
 	
-	private static String[] REQUIRED_PROGS = new String[]{Subprocess.execName("ffmpeg"),
-		Subprocess.execName("ffprobe")}; 
-	private static String URL = "http://ffmpeg.org/download.html";
+	private static String[] FFMPEG_PROGS = new String[] {
+		Subprocess.execName("ffmpeg"), Subprocess.execName("ffprobe") },
+		MPV_PROGS = new String[] {Subprocess.execName("mpv")};
+	private static String URL_FFMPEG = "http://ffmpeg.org/download.html", URL_MPV = "http://mpv.io";
 	public void check() throws RequiredComponentMissing, OptionalComponentMissing, ComponentCheckFailed {
-		for (String p : REQUIRED_PROGS) {
-			check(p, null);
-		}
-		check(Subprocess.execName("ffplay"), "Alternatively, you can set the parameter" + Config.VIDEO_PLAY_CMD + " to an alternate multimedia viewer.");
+		for (String p : FFMPEG_PROGS)
+			check(p, URL_FFMPEG);
+		for (String p : MPV_PROGS)
+			check(p, URL_MPV);
 	}
 	
-	private void check(String p, String extra)
+	private void check(String p, String url)
 			throws RequiredComponentMissing, OptionalComponentMissing, ComponentCheckFailed {
 		String CANNOT_RUN_PROGRAM = "Cannot run program";
 		Subprocess sp = null;
@@ -237,10 +246,7 @@ public class AVEngineFFmpeg implements AVEngine {
 			String msg = ioex.getMessage();
 			_l.log(Level.FINE, msg);
 			if (msg != null && msg.substring(0, CANNOT_RUN_PROGRAM.length()).contentEquals(CANNOT_RUN_PROGRAM)) {
-				if (extra == null)
-					throw new RequiredComponentMissing(p, URL, cfg.getProperty(Config.SEARCH_PATH), msg);
-				else
-					throw new OptionalComponentMissing(p, URL, extra);
+				throw new RequiredComponentMissing(p, url, cfg.getProperty(Config.SEARCH_PATH), msg);
 			}
 			_l.log(Level.SEVERE, "Error while checking for "+p, ioex);
 			System.exit(4);

@@ -8,7 +8,6 @@ package com.newasptech.postslate.audio.wave;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-//import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;

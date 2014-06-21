@@ -28,7 +28,7 @@ public interface AVEngine {
 			String audioCodec, String outputPath);
 	
 	/** Play a set of AV file clips */
-	void play(AVDirRef inputDir, AVClip input, int width, int height);
+	void play(AVDirRef inputDir, AVClip input, int width, int height, int x, int y);
 	
 	/** Return a list of output container types */
 	String[] outputFormats();

@@ -25,7 +25,6 @@ import javax.swing.ProgressMonitor;
 
 import com.newasptech.postslate.AVClipNDir;
 import com.newasptech.postslate.Workspace.AVPair;
-import com.newasptech.postslate.util.Subprocess;
 import com.newasptech.postslate.util.Text;
 
 import gnu.getopt.Getopt;
@@ -277,7 +276,8 @@ public class Cmd {
 	
 	private static final String VIEW_CLAP = "clap", VIEW_FULL = "full",
 			VIEW_VIDEO = "video", VIEW_AUDIO = "audio";
-	public static void view(Cache cache, String filePath, String target, float vshift, String container, Config cfg)
+	public static void view(Cache cache, String filePath, String target, float vshift,
+			String container, Config cfg, int width, int height, int x, int y)
 		throws Exception {
 		AVEngine avEngine = newAVEngine(cfg);
 		Workspace wksp = new Workspace(filePath, cfg, cache, avEngine, null);
@@ -300,49 +300,37 @@ public class Cmd {
 			}
 		}
 		catch(NoSuchElementException nsee) {}
-		if (vclip == null)
+		if (vclip == null) {
 			target = VIEW_AUDIO;
-		else if (aclip == null)
+			_l.log(Level.FINE, "There is no video, so the view target will be " + target);
+		}
+		else if (aclip == null) {
 			target = VIEW_VIDEO;
+			_l.log(Level.FINE, "There is no audio, so the view target will be " + target);
+		}
 		if (target.contentEquals(VIEW_CLAP)) {
-			previewClap(vdir, vclip, adir, aclip, vshift, container, avEngine, cfg);
+			previewClap(vdir, vclip, adir, aclip, vshift, container, avEngine, cfg,
+					width, height, x, y);
 		}
 		else if (target.contentEquals(VIEW_FULL)) {
-			previewMerge(vdir, vclip, adir, aclip, vshift, container, tmpdir(), avEngine, cfg);
+			previewMerge(vdir, vclip, adir, aclip, vshift, container, tmpdir(), avEngine, cfg,
+					width, height, x, y);
 		}
 		else if (target.contentEquals(VIEW_VIDEO)) {
 			AVClip playClip = new AVClip(vclip, 0.0f, AVClip.duration(vclip,
 					AVEngine.MetaValue.CODEC_TYPE_VIDEO, avEngine));
-			showClip(wksp.getVideoDir(), playClip, avEngine, cfg);
+			showClip(wksp.getVideoDir(), playClip, avEngine, width, height, x, y);
 		}
 		else if (target.contentEquals(VIEW_AUDIO)) {
 			AVClip playClip = new AVClip(aclip, 0.0f, AVClip.duration(aclip,
 					AVEngine.MetaValue.CODEC_TYPE_AUDIO, avEngine));
-			showClip(wksp.getAudioDir(), playClip, avEngine, cfg);
+			showClip(wksp.getAudioDir(), playClip, avEngine, width, height, x, y);
 		}
 	}
 	
-	private static void showClip(AVDirRef dir, AVClip clip, AVEngine e, Config cfg) {
-		String customViewerCmd = cfg.getProperty(Config.VIDEO_PLAY_CMD);
-		if (customViewerCmd.length() > 0) {
-			File f = new File(dir.getPath() + System.getProperty("file.separator") + clip.getName());
-			String s = customViewerCmd.replace("%f", f.toString());
-			s = s.replace("%H", cfg.getProperty(Config.PREVIEW_HEIGHT));
-			s = s.replace("%W", cfg.getProperty(Config.PREVIEW_WIDTH));
-			_l.log(Level.FINE, s);
-			Subprocess p = new Subprocess(Text.tokenizeCommand(s), cfg.getProperty(Config.SEARCH_PATH));
-			try {
-				p.run(Subprocess.timeout(clip.getDuration()));
-			}
-			catch(IOException ioe) {}
-			catch(InterruptedException ie) {}
-			catch(Exception ex) {
-				ex.printStackTrace(System.err);
-			}
-		}
-		else {
-			e.play(dir, clip, cfg.ivalue(Config.PREVIEW_WIDTH), cfg.ivalue(Config.PREVIEW_HEIGHT));
-		}
+	private static void showClip(AVDirRef dir, AVClip clip, AVEngine e,
+			int width, int height, int x, int y) {
+			e.play(dir, clip, width, height, x, y);
 	}
 	
 	private static String tmpdir() {
@@ -356,7 +344,8 @@ public class Cmd {
 	}
 	
 	private static void previewMerge(AVDirRef vdir, AVClip vFile, AVDirRef adir, AVClip aFile,
-			float vshift, String container, String workdir, AVEngine e, Config cfg) throws IOException {
+			float vshift, String container, String workdir, AVEngine e, Config cfg,
+			int width, int height, int x, int y) throws IOException {
 		boolean allVideo = false, allAudio = false, copyOther = false;
 		String vcodec = null, acodec = null;
 		String previewFilePath = merge(vdir, vFile, adir, aFile, vshift,
@@ -366,13 +355,15 @@ public class Cmd {
 				vFile.getOffset(), vshift, AVClip.duration(aFile, AVEngine.MetaValue.CODEC_TYPE_AUDIO, e),
 				aFile.getOffset())[2];
 		AVClip pClip = new AVClip(new AVFileRef(previewFile, null), 0.0f, mergedFileDuration + POST_VIDEO_PADDING);
-		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e, cfg);
+		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e,
+				width, height, x, y);
 		previewFile.deleteOnExit();
 	}
 	
 	private static float POST_VIDEO_PADDING = 0.5f;
 	private static void previewClap(AVDirRef vdir, AVClip vFile, AVDirRef adir, AVClip aFile,
-			float vshift, String container, AVEngine e, Config cfg) throws IOException {
+			float vshift, String container, AVEngine e, Config cfg,
+			int width, int height, int x, int y) throws IOException {
 		// Normally, PRE_CLAP is a fixed value, but what if the clap comes less than
 		// that interval after the start of the clip?  Adjust if needed.
 		float usePreClap = Math.min(Math.min(vFile.getOffset(),
@@ -390,11 +381,12 @@ public class Cmd {
 		e.repackage(vdir, vClip, adir, aClip, previewFile.toString());
 		AVClip pClip = new AVClip(new AVFileRef(previewFile, null),
 				0.0f, usePreClap + cfg.fvalue(Config.POST_CLAP) + POST_VIDEO_PADDING);
-		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e, cfg);
+		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e,
+				width, height, x, y);
 	}
 		
 	public static AVEngine newAVEngine(Config cfg) {
-		return new AVEngineFFmpeg(cfg);
+		return new AVEngineFFmpegMPV(cfg);
 	}
 	
 	private static List<String> optArgs(String[] opts, int pos) {
@@ -567,7 +559,8 @@ public class Cmd {
 		else if (command.contentEquals("unstag"))
 			unstag(cache, optArgs(opts, g.getOptind()), cfg);
 		else if (command.contentEquals("view"))
-			view(cache, opts[g.getOptind()], target, vshift, container, cfg);
+			view(cache, opts[g.getOptind()], target, vshift, container, cfg,
+					cfg.ivalue(Config.PREVIEW_WIDTH), cfg.ivalue(Config.PREVIEW_HEIGHT), -1, -1);
 		else if (command.contentEquals("merge"))
 			merge(cache, vdir, outputDir, container, separate, retainVideo,
 				retainAudio, retainOther, vshift, vcodec, acodec, cfg, null);

@@ -58,7 +58,7 @@ public class HotKeyAction extends AbstractAction {
 		}
 		else if (n.contentEquals(PLAY)) {
 			_l.fine("Play");
-			backend.play(controls.getViewType(), controls);
+			backend.play(controls);
 		}
 		else if (n.contentEquals(PLAY_CLAP)) {
 			_l.fine("Select play clap");

@@ -7,9 +7,10 @@ package com.newasptech.postslate.gui;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
 import java.util.Iterator;
 //import java.util.logging.Level;
-//import java.util.logging.Logger;
+import java.util.logging.Logger;
 
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
@@ -35,7 +36,8 @@ import com.newasptech.postslate.Config;
 import com.newasptech.postslate.audio.Event;
 
 class SyncPanel extends BasePanel {
-	//private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.FileViewPanel");
+	@SuppressWarnings("unused")
+	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.FileViewPanel");
 	private static final long serialVersionUID = 1L;
 	private ButtonGroup audioEventOrder = new ButtonGroup();
 	private JSpinner spnCandidates = new JSpinner();
@@ -73,8 +75,7 @@ class SyncPanel extends BasePanel {
 				FormFactory.RELATED_GAP_COLSPEC,
 				FormFactory.DEFAULT_COLSPEC,
 				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("35dlu"),
-				FormFactory.RELATED_GAP_COLSPEC,},
+				},
 			new RowSpec[] {
 				FormFactory.RELATED_GAP_ROWSPEC,
 				FormFactory.MIN_ROWSPEC,
@@ -104,7 +105,14 @@ class SyncPanel extends BasePanel {
 		add(lblCandidate, "6, 2, 3, 1");
 		
 		JLabel lblSortBy = new JLabel("Sort by");
-		add(lblSortBy, "12, 2");
+		add(lblSortBy, "10, 2");
+		
+		rdbtnTime = new JRadioButton("time");
+		rdbtnTime.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent e) {
+				updateEventLists();
+			}
+		});
 		
 		rdbtnScore = new JRadioButton("score");
 		rdbtnScore.setSelected(true);
@@ -114,17 +122,10 @@ class SyncPanel extends BasePanel {
 			}
 		});
 		rdbtnScore.setToolTipText("Order the clap-candidate items by a score that represents their likelihood of being the real clap.");
-		add(rdbtnScore, "14, 2, 3, 1, left, default");
+		add(rdbtnScore, "12, 2, 3, 1, left, default");
 		audioEventOrder.add(rdbtnScore);
-		
-		rdbtnTime = new JRadioButton("time");
-		rdbtnTime.addMouseListener(new MouseAdapter() {
-			public void mouseClicked(MouseEvent e) {
-				updateEventLists();
-			}
-		});
 		rdbtnTime.setToolTipText("Order the clap-candidate items by time.");
-		add(rdbtnTime, "20, 2, 3, 1, left, default");
+		add(rdbtnTime, "16, 2, 5, 1, left, default");
 		audioEventOrder.add(rdbtnTime);
 		
 		JLabel lblGraphCamera = new JLabel("Camera Audio");
