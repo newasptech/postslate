@@ -6,7 +6,6 @@
 package com.newasptech.postslate.util;
 
 import java.io.File;
-import java.io.InputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,9 +76,9 @@ public class Subprocess {
 		if (_l.isLoggable(Level.FINER))
 			_l.log(Level.FINER, "exec: " + Text.join(args));
 		Process p = Runtime.getRuntime().exec(args);
-		Capture cout = new Capture(p.getInputStream());
+		StreamCaptureThread cout = new StreamCaptureThread(p.getInputStream());
 		cout.start();
-		Capture cerr = new Capture(p.getErrorStream());
+		StreamCaptureThread cerr = new StreamCaptureThread(p.getErrorStream());
 		cerr.start();
 		p.getOutputStream().close();
 		status = p.waitFor();
@@ -88,7 +87,7 @@ public class Subprocess {
 	}
 	
 	public void run(int timeout) throws InterruptedException, IOException {
-		ProcessWrapper pw = start();
+		SubprocessMonitoringThread pw = start();
 		try {
 			pw.join(timeout);
 		}
@@ -105,16 +104,16 @@ public class Subprocess {
 		err = pw.getStderr().output(timeout);
 	}
 	
-	public ProcessWrapper start() throws IOException {
+	public SubprocessMonitoringThread start() throws IOException {
 		if (_l.isLoggable(Level.FINER))
 			_l.log(Level.FINER, "exec: " + Text.join(args));
 		Process p = Runtime.getRuntime().exec(args);
-		Capture cout = new Capture(p.getInputStream());
+		StreamCaptureThread cout = new StreamCaptureThread(p.getInputStream());
 		cout.start();
-		Capture cerr = new Capture(p.getErrorStream());
+		StreamCaptureThread cerr = new StreamCaptureThread(p.getErrorStream());
 		cerr.start();
 		p.getOutputStream().close();
-		ProcessWrapper pw = new ProcessWrapper(p, cout, cerr);
+		SubprocessMonitoringThread pw = new SubprocessMonitoringThread(p, cout, cerr);
 		pw.start();
 		return pw;
 	}
@@ -150,111 +149,6 @@ public class Subprocess {
 	public static String checkOutput(String[] _args)
 			throws InterruptedException, IOException, NonzeroExit {
 		return checkOutput(_args, EXTRAPATH_DEFAULT);
-	}
-	
-	public static class ProcessWrapper extends Thread {
-		private Process p;
-		private Capture cout, cerr;
-		public ProcessWrapper(Process _p, Capture _cout, Capture _cerr) {
-			p = _p;
-			cout = _cout;
-			cerr = _cerr;
-		}
-		public Process getProcess() {
-			return p;
-		}
-		public Capture getStdout() {
-			return cout;
-		}
-		public Capture getStderr() {
-			return cerr;
-		}
-		public void run() {
-			try {
-				p.waitFor();
-			}
-			catch(InterruptedException ie) { }
-		}
-	}
-	
-	public static class ReplaceableWrapper {
-		private ProcessWrapper pw;
-		public ReplaceableWrapper() {
-			_l.log(Level.FINE, "New ProcessWrapper");
-			pw = null;
-		}
-		public ProcessWrapper get() {
-			return pw;
-		}
-		public void set(ProcessWrapper _pw) {
-			if (pw != null) {
-				_l.log(Level.FINE, "Destroy previous process");
-				pw.getProcess().destroy();
-			}
-			_l.log(Level.FINE, "Save new process");
-			pw = _pw;
-		}
-	}
-	
-	private static class Capture extends Thread {
-		private InputStream istr;
-		private StringBuilder osb = new StringBuilder();
-		private IOException caught = null;
-		static private final int BLOCK_SIZE = 1024;
-		
-		public Capture(InputStream _istr) {
-			super();
-			istr = _istr;
-		}
-		
-		public void run() {
-			byte outputChunk[] = new byte[BLOCK_SIZE];
-			try {
-				int bytesRead = 0;
-				boolean more = true;
-				while (more) {
-					bytesRead = istr.read(outputChunk, 0, BLOCK_SIZE);
-					switch(bytesRead) {
-					case -1:
-						more = false;
-						break;
-					case 0:
-						break;
-					default:
-						osb.append(new String(outputChunk, 0, bytesRead));
-					}
-				}
-			}
-			catch(IOException e) {
-				caught = e;
-			}
-			finally {
-				try {
-					istr.close();
-				}
-				catch(Exception x) {}
-			}
-		}
-		
-		public void finish() throws InterruptedException, IOException {
-			join();
-			if (caught != null) throw caught;
-		}
-		
-		public void finish(int timeout) throws InterruptedException, IOException {
-			join(timeout);
-			if (caught != null) throw caught;
-		}
-		
-		public String output() throws InterruptedException, IOException {
-			finish();
-			return osb.toString();
-		}
-		
-		public String output(int timeout) throws InterruptedException, IOException {
-			finish(timeout);
-			return osb.toString();
-		}
 	}
 	
 	public static class NonzeroExit extends RuntimeException {
