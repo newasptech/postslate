@@ -40,8 +40,6 @@ public class Config extends Properties {
 	private static final String QUANTIZE_FACTOR_DEF = "2";
 	public static final String TYPICAL_CLAP_DURATION = "com.newasptech.postslate.typical_clap_duration";
 	private static final String TYPICAL_CLAP_DURATION_DEF = "0.005";
-	public static final String VIDEO_PLAY_CMD = "com.newasptech.postslate.video_play_cmd";
-	public static final String VIDEO_PLAY_CMD_DEF = "";
 	
 	public static String comments() {
 		StringBuffer c = new StringBuffer("This file contains parameter settings for postslate.\nIf a parameter is not set in this file, its default value (shown) is used.\n\n");
@@ -58,7 +56,6 @@ public class Config extends Properties {
 		ac(c, SEARCH_PATH, SEARCH_PATH_DEF, "Extra paths to search for executables; will be prepended to the PATH environment variable value.  Use the platform-appropriate delimiter (';' for Windows, ':' for Linux/Mac/UNIX) to separate items.");
 		ac(c, QUANTIZE_FACTOR, QUANTIZE_FACTOR_DEF, "When scanning for claps, 'quantize' the results into chunks of this size, which represents a multiple of the typical clap duration.  In other words, if a typical clap lasts 0.005 seconds and the quantize factor is set to 2, then each 0.01-second interval of audio can contain at most one clap candidate.");
 		ac(c, TYPICAL_CLAP_DURATION, TYPICAL_CLAP_DURATION_DEF, "How long, in seconds, does a typical clap last? (You must re-scan a directory after changing this parameter for the new value to take effect.)");
-		ac(c, VIDEO_PLAY_CMD, VIDEO_PLAY_CMD_DEF, "Command to launch video player with %f for file path, %H for window height and %W for window width");
 		return c.toString();
 	}
 	
@@ -81,7 +78,6 @@ public class Config extends Properties {
 		p.setProperty(SEARCH_PATH, SEARCH_PATH_DEF);
 		p.setProperty(QUANTIZE_FACTOR, QUANTIZE_FACTOR_DEF);
 		p.setProperty(TYPICAL_CLAP_DURATION, TYPICAL_CLAP_DURATION_DEF);
-		p.setProperty(VIDEO_PLAY_CMD, VIDEO_PLAY_CMD_DEF);
 		return p;
 	}
 
