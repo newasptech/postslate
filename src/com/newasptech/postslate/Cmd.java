@@ -51,12 +51,12 @@ public class Cmd {
 		AVDirRef adref = new AVDirRef(AVDirRef.Type.AUDIO, adir, aspec, vdir);
 		vdref.save(cache, update);
 		adref.save(cache, update);
-		return new Workspace(vdref, adref, true, cfg, cache, newAVEngine(cfg), m);
+		return new Workspace(vdref, adref, true, cfg, cache, getTheAVEngine(cfg), m);
 	}
 	
 	public static void matchFiles(Cache cache, String vpath, float vpos, String apath,
 			float apos, Config cfg) throws Exception {
-		Workspace wksp = new Workspace(vpath, cfg, cache, newAVEngine(cfg), null);
+		Workspace wksp = new Workspace(vpath, cfg, cache, getTheAVEngine(cfg), null);
 		File vfile = new File(vpath), afile = new File(apath);
 		AVDirRef vdref = wksp.findAVDir(vfile);
 		AVDirRef adref = wksp.findAVDir(afile);
@@ -67,7 +67,7 @@ public class Cmd {
 	
 	public static void unmatch(Cache cache, String vpath, String apath, Config cfg)
 		throws Exception {
-		Workspace wksp = new Workspace(vpath, cfg, cache, newAVEngine(cfg), null);
+		Workspace wksp = new Workspace(vpath, cfg, cache, getTheAVEngine(cfg), null);
 		AVClipNDir vcd = wksp.findClip(new File(vpath));
 		AVClipNDir acd = wksp.findClip(new File(apath));
 		if (0 != acd.clip.compareTo( wksp.getMatchBox().getMatchedAudio(vcd.clip))) {
@@ -80,7 +80,7 @@ public class Cmd {
 	
 	private static void list(Cache cache, String dir, String delim, float vshift, Config cfg)
 			throws Exception {
-		AVEngine e = newAVEngine(cfg);
+		AVEngine e = getTheAVEngine(cfg);
 		Workspace wksp = new Workspace(dir, cfg, cache, e, null);
 		for (Iterator<Workspace.AVPair> pp = wksp.contents().iterator(); pp.hasNext();) {
 			Workspace.AVPair p = pp.next();
@@ -149,7 +149,7 @@ public class Cmd {
 			String fdir = file.getParentFile().getCanonicalPath();
 			if (dir == null || !dir.equals(fdir)) {
 				if (wksp != null) wfMap.put(wksp, wfList.toArray(new String[]{}));
-				wksp = new Workspace(filePath, cfg, cache, newAVEngine(cfg), null);
+				wksp = new Workspace(filePath, cfg, cache, getTheAVEngine(cfg), null);
 				dir = fdir;
 				wfList = new LinkedList<String>();
 			}
@@ -164,7 +164,7 @@ public class Cmd {
 			boolean retainAudio, boolean retainOther, float vshift,
 			String vcodec, String acodec, Config cfg, ProgressMonitor m) throws Exception {
 		try {
-			AVEngine avEngine = newAVEngine(cfg);
+			AVEngine avEngine = getTheAVEngine(cfg);
 			Workspace wksp = new Workspace(vpath, cfg, cache, avEngine, null);
 			AVDirRef vdir = wksp.getVideoDir(), adir = wksp.getAudioDir();
 			List<AVPair> contents = wksp.contents();
@@ -279,7 +279,7 @@ public class Cmd {
 	public static void view(Cache cache, String filePath, String target, float vshift,
 			String container, Config cfg, int width, int height, int x, int y)
 		throws Exception {
-		AVEngine avEngine = newAVEngine(cfg);
+		AVEngine avEngine = getTheAVEngine(cfg);
 		Workspace wksp = new Workspace(filePath, cfg, cache, avEngine, null);
 		AVDirRef vdir = null, adir = null;
 		AVClip vclip = null, aclip = null;
@@ -384,9 +384,12 @@ public class Cmd {
 		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e,
 				width, height, x, y);
 	}
-		
-	public static AVEngine newAVEngine(Config cfg) {
-		return new AVEngineFFmpegMPV(cfg);
+	
+	private static AVEngine avEngin = null;
+	public static AVEngine getTheAVEngine(Config cfg) {
+		if (avEngin == null)
+			avEngin = new AVEngineFFmpegMPV(cfg);
+		return avEngin;
 	}
 	
 	private static List<String> optArgs(String[] opts, int pos) {
@@ -541,7 +544,7 @@ public class Cmd {
 		Cache cache = new Cache(cacheDir);
 		Config cfg = new Config(cacheDir);
 		initLogging(cfg);
-		newAVEngine(cfg).check();
+		getTheAVEngine(cfg).check();
 		if (aspec == null) aspec = cfg.getProperty(Config.FILESPEC_AUDIO);
 		if (vspec == null) vspec = cfg.getProperty(Config.FILESPEC_VIDEO);
 		if (command.contentEquals("match")) {

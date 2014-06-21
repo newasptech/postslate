@@ -88,6 +88,24 @@ public class Subprocess {
 	}
 	
 	public void run(int timeout) throws InterruptedException, IOException {
+		ProcessWrapper pw = start();
+		try {
+			pw.join(timeout);
+		}
+		catch(InterruptedException ie) { }
+		Process p = pw.getProcess();
+		try {
+			status = p.exitValue();
+		}
+		catch(IllegalThreadStateException itse) {
+			p.destroy();
+			status = p.waitFor();
+		}
+		out = pw.getStdout().output(timeout);
+		err = pw.getStderr().output(timeout);
+	}
+	
+	public ProcessWrapper start() throws IOException {
 		if (_l.isLoggable(Level.FINER))
 			_l.log(Level.FINER, "exec: " + Text.join(args));
 		Process p = Runtime.getRuntime().exec(args);
@@ -96,21 +114,9 @@ public class Subprocess {
 		Capture cerr = new Capture(p.getErrorStream());
 		cerr.start();
 		p.getOutputStream().close();
-		ProcessWrapper pw = new ProcessWrapper(p);
+		ProcessWrapper pw = new ProcessWrapper(p, cout, cerr);
 		pw.start();
-		try {
-			pw.join(timeout);
-		}
-		catch(InterruptedException ie) { }
-		try {
-			status = p.exitValue();
-		}
-		catch(IllegalThreadStateException itse) {
-			p.destroy();
-			status = p.waitFor();
-		}
-		out = cout.output(timeout);
-		err = cerr.output(timeout);
+		return pw;
 	}
 	
 	public static void check(String[] _args, String _extraPath)
@@ -146,13 +152,22 @@ public class Subprocess {
 		return checkOutput(_args, EXTRAPATH_DEFAULT);
 	}
 	
-	class ProcessWrapper extends Thread {
+	public static class ProcessWrapper extends Thread {
 		private Process p;
-		public ProcessWrapper(Process _p) {
+		private Capture cout, cerr;
+		public ProcessWrapper(Process _p, Capture _cout, Capture _cerr) {
 			p = _p;
+			cout = _cout;
+			cerr = _cerr;
 		}
 		public Process getProcess() {
 			return p;
+		}
+		public Capture getStdout() {
+			return cout;
+		}
+		public Capture getStderr() {
+			return cerr;
 		}
 		public void run() {
 			try {
@@ -162,7 +177,26 @@ public class Subprocess {
 		}
 	}
 	
-	class Capture extends Thread {
+	public static class ReplaceableWrapper {
+		private ProcessWrapper pw;
+		public ReplaceableWrapper() {
+			_l.log(Level.FINE, "New ProcessWrapper");
+			pw = null;
+		}
+		public ProcessWrapper get() {
+			return pw;
+		}
+		public void set(ProcessWrapper _pw) {
+			if (pw != null) {
+				_l.log(Level.FINE, "Destroy previous process");
+				pw.getProcess().destroy();
+			}
+			_l.log(Level.FINE, "Save new process");
+			pw = _pw;
+		}
+	}
+	
+	private static class Capture extends Thread {
 		private InputStream istr;
 		private StringBuilder osb = new StringBuilder();
 		private IOException caught = null;

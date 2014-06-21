@@ -21,9 +21,12 @@ import com.newasptech.postslate.util.Text;
 public class AVEngineFFmpegMPV implements AVEngine {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.AVEngineFFmpeg");
 	private Config cfg;
+	private Subprocess.ReplaceableWrapper playSubWrap;
 	
 	public AVEngineFFmpegMPV(Config _cfg) {
+		_l.log(Level.FINE, "New AVEngine");
 		cfg = _cfg;
+		playSubWrap = new Subprocess.ReplaceableWrapper();
 	}
 	
 	public String metaKeyName(MetaKey key) {
@@ -104,10 +107,9 @@ public class AVEngineFFmpegMPV implements AVEngine {
 		_l.log(Level.FINE, msg.toString());
 		Subprocess p = new Subprocess(cmdArray, cfg.getProperty(Config.SEARCH_PATH));
 		try {
-			p.run(Subprocess.timeout(input.getDuration()));
+			playSubWrap.set(p.start());
 		}
 		catch(IOException ioe) {}
-		catch(InterruptedException ie) {}
 		catch(Exception e) {
 			e.printStackTrace(System.err);
 		}

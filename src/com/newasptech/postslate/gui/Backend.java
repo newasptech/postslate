@@ -98,7 +98,7 @@ class Backend {
 	}
 	
 	public AVEngine getAVEngine(Config cfg) {
-		return Cmd.newAVEngine(cfg);
+		return Cmd.getTheAVEngine(cfg);
 	}
 
 	public static final String STAG_MATCH = "";
