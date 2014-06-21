@@ -16,17 +16,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.newasptech.postslate.util.Subprocess;
+import com.newasptech.postslate.util.SubprocessSingletonWrapper;
 import com.newasptech.postslate.util.Text;
 
 public class AVEngineFFmpegMPV implements AVEngine {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.AVEngineFFmpeg");
 	private Config cfg;
-	private Subprocess.ReplaceableWrapper playSubWrap;
+	private SubprocessSingletonWrapper playSubWrap;
 	
 	public AVEngineFFmpegMPV(Config _cfg) {
 		_l.log(Level.FINE, "New AVEngine");
 		cfg = _cfg;
-		playSubWrap = new Subprocess.ReplaceableWrapper();
+		playSubWrap = new SubprocessSingletonWrapper();
 	}
 	
 	public String metaKeyName(MetaKey key) {
