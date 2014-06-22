@@ -15,27 +15,6 @@ class BasePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private MainFrame mainFrame = null;
 	private GuiSession guiSession = null;
-	// WIP: move to the ViewController class
-	public enum ViewType {
-		CLAP,
-		FULL,
-		VIDEO,
-		AUDIO;
-		public static ViewType fromString(String a) {
-			ViewType viewType = CLAP;
-			if (a.equalsIgnoreCase(CLAP.toString()))
-				viewType = ViewType.CLAP;
-			else if (a.equalsIgnoreCase(FULL.toString()))
-				viewType = ViewType.FULL;
-			else if (a.equalsIgnoreCase(AUDIO.toString()))
-				viewType = ViewType.AUDIO;
-			else if (a.equalsIgnoreCase(VIDEO.toString()))
-				viewType = ViewType.VIDEO;
-			else
-				assert(false);
-			return viewType;
-		}
-	};
 
 	public BasePanel() {
 		super();

@@ -10,7 +10,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 
-import com.newasptech.postslate.gui.BasePanel.ViewType;
+import com.newasptech.postslate.ViewController;
 
 public class Controls {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.Controls");
@@ -35,8 +35,8 @@ public class Controls {
 	public DirectorySelectionAdapter getCameraPath() { return panelFileView.getCameraPath(); }
 	public DirectorySelectionAdapter getExtAudioPath() { return panelFileView.getExtAudioPath(); }
 	public JTable getFileList() { return panelFileView.getFileList(); }
-	public PreviewPanel.ViewType getViewType() { return panelPreviewCtl.getViewType(); }
-	public void setViewType(PreviewPanel.ViewType vt) { panelPreviewCtl.setViewType(vt); }
+	public ViewController.ViewType getViewType() { return panelPreviewCtl.getViewType(); }
+	public void setViewType(ViewController.ViewType vt) { panelPreviewCtl.setViewType(vt); }
 	public JSpinner getCandidates() { return panelSync.getCandidates(); }
 	public WaveGraphPanel getVideoGraphPanel() { return panelSync.getVideoGraphPanel(); }
 	public WaveGraphPanel getAudioGraphPanel() { return panelSync.getAudioGraphPanel(); }
@@ -74,7 +74,7 @@ public class Controls {
 		try {
 			getAutoView().setSelected(new Boolean(p.getProperty(AUTO_VIEW)));
 			getCameraPath().getTextField().setText(p.getProperty(CAMERA_PATH));
-			setViewType(ViewType.fromString(p.getProperty(VIEW_TYPE)));
+			setViewType(ViewController.ViewType.fromString(p.getProperty(VIEW_TYPE)));
 			getCandidates().setValue(new Integer(p.getProperty(CANDIDATES)));
 			getMergeFormat().setSelectedItem(p.getProperty(MERGE_FORMAT));
 			getVideoShift().setValue(new Float(p.getProperty(VIDEO_SHIFT)));

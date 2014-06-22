@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 
+import com.newasptech.postslate.ViewController;
 import com.newasptech.postslate.audio.Event;
 
 public class HotKeyAction extends AbstractAction {
@@ -61,19 +62,19 @@ public class HotKeyAction extends AbstractAction {
 		}
 		else if (n.contentEquals(PLAY_CLAP)) {
 			_l.fine("Select play clap");
-			controls.setViewType(PreviewPanel.ViewType.CLAP);
+			controls.setViewType(ViewController.ViewType.CLAP);
 		}
 		else if (n.contentEquals(PLAY_FULL)) {
 			_l.fine("Select play full");
-			controls.setViewType(PreviewPanel.ViewType.FULL);
+			controls.setViewType(ViewController.ViewType.FULL);
 		}
 		else if (n.contentEquals(PLAY_VIDEO)) {
 			_l.fine("Select play video");
-			controls.setViewType(PreviewPanel.ViewType.VIDEO);
+			controls.setViewType(ViewController.ViewType.VIDEO);
 		}
 		else if (n.contentEquals(PLAY_AUDIO)) {
 			_l.fine("Select play audio");
-			controls.setViewType(PreviewPanel.ViewType.AUDIO);
+			controls.setViewType(ViewController.ViewType.AUDIO);
 		}
 	}
 	private void adjustClap(boolean isVideo, int delta) {

@@ -5,18 +5,19 @@
  */
 package com.newasptech.postslate.gui;
 
-import javax.swing.ButtonGroup;
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.RowSpec;
 import com.jgoodies.forms.factories.FormFactory;
 import javax.swing.JButton;
+import javax.swing.ButtonGroup;
 import javax.swing.JRadioButton;
 import javax.swing.JCheckBox;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.newasptech.postslate.ViewController;
 
 class PreviewPanel extends BasePanel {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.PreviewPanel");
@@ -60,23 +61,23 @@ class PreviewPanel extends BasePanel {
 		btnView.setToolTipText("Preview the item selected at right.");
 		add(btnView, "2, 2");
 		
-		rdbtnClap = new JRadioButton(ViewType.CLAP.toString().toLowerCase());
+		rdbtnClap = new JRadioButton(ViewController.ViewType.CLAP.toString().toLowerCase());
 		rdbtnClap.setSelected(true);
 		rdbtnClap.setToolTipText("Preview just around the sync point, where the clap ought to appear.");
 		rdbtnClap.setActionCommand(rdbtnClap.getText());
 		add(rdbtnClap, "4, 2, right, default");
 		
-		rdbtnFull = new JRadioButton(ViewType.FULL.toString().toLowerCase());
+		rdbtnFull = new JRadioButton(ViewController.ViewType.FULL.toString().toLowerCase());
 		rdbtnFull.setToolTipText("Preview the full merged clip, with video from the camera and externally-recorded audio.");
 		rdbtnFull.setActionCommand(rdbtnFull.getText());
 		add(rdbtnFull, "6, 2, right, default");
 		
-		rdbtnVideo = new JRadioButton(ViewType.VIDEO.toString().toLowerCase());
+		rdbtnVideo = new JRadioButton(ViewController.ViewType.VIDEO.toString().toLowerCase());
 		rdbtnVideo.setToolTipText("Play just the camera video clip.");
 		rdbtnVideo.setActionCommand(rdbtnVideo.getText());
 		add(rdbtnVideo, "8, 2, right, default");
 		
-		rdbtnAudio = new JRadioButton(ViewType.AUDIO.toString().toLowerCase());
+		rdbtnAudio = new JRadioButton(ViewController.ViewType.AUDIO.toString().toLowerCase());
 		rdbtnAudio.setToolTipText("Play just the external audio.");
 		rdbtnAudio.setActionCommand(rdbtnAudio.getText());
 		add(rdbtnAudio, "10, 2, right, default");
@@ -99,17 +100,17 @@ class PreviewPanel extends BasePanel {
 	
 	public JCheckBox getAutoView() { return chkAutoView; }
 
-	public ViewType getViewType() {
+	public ViewController.ViewType getViewType() {
 		if (rdbtnClap.isSelected())
-			return ViewType.CLAP;
+			return ViewController.ViewType.CLAP;
 		else if (rdbtnFull.isSelected())
-			return ViewType.FULL;
+			return ViewController.ViewType.FULL;
 		else if (rdbtnVideo.isSelected())
-			return ViewType.VIDEO;
-		return ViewType.AUDIO;
+			return ViewController.ViewType.VIDEO;
+		return ViewController.ViewType.AUDIO;
 	}
 	
-	public void setViewType(ViewType t) {
+	public void setViewType(ViewController.ViewType t) {
 		switch(t) {
 		case CLAP: rdbtnClap.setSelected(true); break;
 		case FULL: rdbtnFull.setSelected(true); break;

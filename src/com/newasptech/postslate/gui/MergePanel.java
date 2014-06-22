@@ -17,6 +17,7 @@ import com.jgoodies.forms.layout.RowSpec;
 import com.jgoodies.forms.factories.FormFactory;
 
 import com.newasptech.postslate.Config;
+import com.newasptech.postslate.MergeController;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -109,10 +110,10 @@ class MergePanel extends BasePanel {
 				Thread t = new Thread() {
 					public void run() {
 						try {
-							getBackend().getWorkspace().merge(txtMergePath.getText(), (String)cboMergeFormat.getSelectedItem(),
-								chkSeparate.isSelected(), chkRetainVideo.isSelected(), chkRetainAudio.isSelected(),
-								chkRetainData.isSelected(), (Float)(spnVShift.getValue()), null, null,
-								getMainFrame().getProgressMonitor(0, 100, "Merging"));
+							MergeController mc = new MergeController(txtMergePath.getText(), (String)cboMergeFormat.getSelectedItem(),
+									chkSeparate.isSelected(), chkRetainVideo.isSelected(), chkRetainAudio.isSelected(),
+									chkRetainData.isSelected(), (Float)(spnVShift.getValue()), null, null, getBackend().getWorkspace());
+							mc.mergeAll(getMainFrame().getProgressMonitor(0, 100, "Merging"));
 						}
 						catch(Exception ex) {
 							report(ex);

@@ -144,10 +144,10 @@ public class Cmd {
 				"\n" + 
 				"view - view media\n" + 
 				"  view --target=" + Text.join(new String[]{
-						Workspace.VIEW_CLAP,
-						Workspace.VIEW_FULL,
-						Workspace.VIEW_VIDEO,
-						Workspace.VIEW_AUDIO
+						ViewController.ViewType.CLAP.toString(),
+						ViewController.ViewType.FULL.toString(),
+						ViewController.ViewType.VIDEO.toString(),
+						ViewController.ViewType.AUDIO.toString()
 						}, "|") + " {file}\n" + 
 				"\n" + 
 				"merge - trim clips and merge\n" + 
@@ -227,7 +227,8 @@ public class Cmd {
 		String command = argv[0], acodec = null, adir = null, afile = null,
 				aspec = null, cacheDir = null, container = null,
 				delim = "\t", listDir = null, outputDir = null, vcodec = null,
-				vdir = null, vfile = null, vspec = null, target = Workspace.VIEW_CLAP;
+				vdir = null, vfile = null, vspec = null;
+		ViewController.ViewType target = ViewController.ViewType.CLAP;
 		float apos = -1.0f, vpos = -1.0f, vshift = 0.0f;
 		Getopt g = options(argv);
 		boolean retainAudio = false, retainOther = false, retainVideo = false,
@@ -257,7 +258,7 @@ public class Cmd {
 			case OPT_VIDEO_POS:			vpos = Float.valueOf(g.getOptarg()); break;
 			case OPT_VIDEO_FILESPEC:	vspec = g.getOptarg(); break;
 			case OPT_VIDEO_SHIFT:		vshift = Float.valueOf(g.getOptarg()); break;
-			case OPT_VIEW_TARGET:		target = g.getOptarg(); break;
+			case OPT_VIEW_TARGET:		target = ViewController.ViewType.fromString(g.getOptarg()); break;
 			default:					printHelpAndExit(); break;
 			}
 		}
@@ -288,15 +289,16 @@ public class Cmd {
 		else if (command.contentEquals("view")) {
 			File avFile = new File(opts[g.getOptind()]);
 			Workspace w = session.getWorkspaceForFile(avFile);
-			w.view(avFile, target, vshift, container,
-					session.getConfig().ivalue(Config.PREVIEW_WIDTH),
+			ViewController vc = new ViewController(vshift, container, w);
+			vc.view(avFile, target,	session.getConfig().ivalue(Config.PREVIEW_WIDTH),
 					session.getConfig().ivalue(Config.PREVIEW_HEIGHT), -1, -1);
 		}
 		else if (command.contentEquals("merge")) {
 			Workspace w = session.getWorkspaceForPath(vdir);
-			w.merge(outputDir, container, separate, retainVideo, retainAudio, retainOther,
-					vshift, vcodec, acodec, null);
-	}
+			MergeController mc = new MergeController(outputDir, container, separate,
+					retainVideo, retainAudio, retainOther, vshift, vcodec, acodec, w);
+			mc.mergeAll(null);
+		}
 		else
 			printHelpAndExit();
 	}

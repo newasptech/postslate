@@ -23,6 +23,7 @@ import com.newasptech.postslate.AVEngine;
 import com.newasptech.postslate.Config;
 import com.newasptech.postslate.Session;
 import com.newasptech.postslate.TrimValues;
+import com.newasptech.postslate.ViewController;
 import com.newasptech.postslate.Workspace;
 import com.newasptech.postslate.AVClipNDir;
 import com.newasptech.postslate.audio.Event;
@@ -239,15 +240,15 @@ class GuiSession extends Session {
 	
 	/** All GUI media-play calls get funneled down to this. */
 	private void doPlay(String filePath, Controls c) throws Exception {
-		String viewType = c.getViewType().toString().toLowerCase();
-		_l.log(Level.FINE, "View " + filePath + " portion " + viewType);
+		_l.log(Level.FINE, "View " + filePath + " portion " + c.getViewType().toString());
 		JPanel vp = c.getViewPanel();
 		Point lhCorner = vp.getLocationOnScreen();
 		int width = vp.getWidth(), height = vp.getHeight(),
 				x = (int)lhCorner.getX(), y = (int)lhCorner.getY();
 		File avFile = new File(filePath);
-		workspace.view(avFile, viewType, (Float)c.getVideoShift().getValue(),
-				(String)c.getMergeFormat().getSelectedItem(), width, height, x, y);
+		ViewController vc = new ViewController((Float)c.getVideoShift().getValue(),
+				(String)c.getMergeFormat().getSelectedItem(), workspace);
+		vc.view(avFile, c.getViewType(), width, height, x, y);
 	}
 	
 	public void autoPlayIfNeeded(int row, Controls c) throws Exception {
@@ -260,7 +261,7 @@ class GuiSession extends Session {
 	}
 	
 	public void play(Controls c) {
-		int col = c.getViewType() == PreviewPanel.ViewType.AUDIO ? 1 : 0;
+		int col = c.getViewType() == ViewController.ViewType.AUDIO ? 1 : 0;
 		String playFile = getSelectedFilePath(-1, col, c);
 		if (playFile == null) return;
 		try {
