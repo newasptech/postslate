@@ -45,7 +45,7 @@ class MergePanel extends BasePanel {
 	/**
 	 * Create the panel.
 	 */
-	public MergePanel(MainFrame f, Backend m) {
+	public MergePanel(MainFrame f, GuiSession m) {
 		super(f, m);
 		setLayout(new FormLayout(new ColumnSpec[] {
 				FormFactory.RELATED_GAP_COLSPEC,
@@ -198,7 +198,7 @@ class MergePanel extends BasePanel {
 	}
 	
 	private void setMergeFormats() {
-		Backend b = getBackend();
+		GuiSession b = getBackend();
 		for (String format : b.getAVEngine().outputFormats()) {
 			cboMergeFormat.addItem(format);
 		}

@@ -14,7 +14,7 @@ class BasePanel extends JPanel {
 	//private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.BasePanel");
 	private static final long serialVersionUID = 1L;
 	private MainFrame mainFrame = null;
-	private Backend backend = null;
+	private GuiSession guiSession = null;
 	// WIP: move to the ViewController class
 	public enum ViewType {
 		CLAP,
@@ -41,18 +41,18 @@ class BasePanel extends JPanel {
 		super();
 	}
 
-	public BasePanel(MainFrame f, Backend m) {
+	public BasePanel(MainFrame f, GuiSession m) {
 		super();
 		mainFrame = f;
-		backend = m;
+		guiSession = m;
 	}
 	
 	public MainFrame getMainFrame() {
 		return mainFrame;
 	}
 	
-	public Backend getBackend() {
-		return backend;
+	public GuiSession getBackend() {
+		return guiSession;
 	}
 	
 	public void report(Exception ex) {

@@ -59,7 +59,7 @@ class FileViewPanel extends BasePanel {
 	/**
 	 * Create the panel.
 	 */
-	public FileViewPanel(MainFrame f, Backend m) {
+	public FileViewPanel(MainFrame f, GuiSession m) {
 		super(f, m);
 		setLayout(new FormLayout(new ColumnSpec[] {
 				FormFactory.RELATED_GAP_COLSPEC,
@@ -261,13 +261,13 @@ class FileViewPanel extends BasePanel {
 	}
 	
 	class ScanThread extends Thread {
-		private Backend backend;
+		private GuiSession guiSession;
 		private String cameraPath, extAudioPath, vFilemask, aFilemask;
 		private boolean update;
 		private ProgressMonitor m;
-		private MainFrame.Controls c;
-		public ScanThread(Backend _backend, String _cameraPath, String _extAudioPath, String _vFilemask, String _aFilemask, boolean _update, ProgressMonitor _m, MainFrame.Controls _c) {
-			backend = _backend;
+		private Controls c;
+		public ScanThread(GuiSession _backend, String _cameraPath, String _extAudioPath, String _vFilemask, String _aFilemask, boolean _update, ProgressMonitor _m, Controls _c) {
+			guiSession = _backend;
 			cameraPath = _cameraPath;
 			extAudioPath = _extAudioPath;
 			vFilemask = _vFilemask;
@@ -278,7 +278,7 @@ class FileViewPanel extends BasePanel {
 		}
 		public void run() {
 			try {
-				backend.scanNewWorkspace(cameraPath, extAudioPath, vFilemask, aFilemask, update, m, c);
+				guiSession.scanNewWorkspace(cameraPath, extAudioPath, vFilemask, aFilemask, update, m, c);
 			}
 			catch(Exception ex) {
 				report(ex);
@@ -351,14 +351,14 @@ class FileViewPanel extends BasePanel {
 		private static final Color stagBackgroundColor = new Color(192, 192, 192),
 				nonstagBackgroundColor = new Color(255, 255, 255),
 				matchForegroundColor = new Color(37, 141, 72), defForegroundColor = new Color(0, 0, 0);
-		private Backend backend;
-		public AVFileTableRenderer(Backend _backend) {
-			backend = _backend;
+		private GuiSession guiSession;
+		public AVFileTableRenderer(GuiSession _backend) {
+			guiSession = _backend;
 		}
 		public Component getTableCellRendererComponent(JTable table, Object value,
 				boolean isSelected, boolean hasFocus, int row, int column) {
 			AVFileTableModel m = (AVFileTableModel)table.getModel();
-			MatchBox mbox = backend.getWorkspace().getMatchBox();
+			MatchBox mbox = guiSession.getWorkspace().getMatchBox();
 			AVPair pair = m.getPairAt(row);
 			if (
 				(pair.video() != null && mbox.isStagVideo(pair.video()))
@@ -406,7 +406,7 @@ class FileViewPanel extends BasePanel {
 					break;
 				}
 			}
-			return Backend.STAG_MATCH;
+			return GuiSession.STAG_MATCH;
 		}
 		public String getColumnName(int columnIndex) {
 			switch(columnIndex) {

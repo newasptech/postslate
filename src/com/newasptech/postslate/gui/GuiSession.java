@@ -32,23 +32,23 @@ import com.newasptech.postslate.gui.FileViewPanel.AVFileTableRenderer;
 import com.newasptech.postslate.util.Misc;
 
 /** Class for back-end GUI-related A/V manipulation. */
-class Backend extends Session { // WIP: rename backend to GUISession
+class GuiSession extends Session {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.Backend");
 	private Workspace workspace = null;
 	
-	public Backend(String cacheDir)
+	public GuiSession(String cacheDir)
 			throws IOException, AVEngine.ComponentCheckFailed, AVEngine.OptionalComponentMissing,
 			AVEngine.RequiredComponentMissing {
 		super(cacheDir);
 	}
 
-	public void loadWorkspace(String path, MainFrame.Controls c) throws Exception {
+	public void loadWorkspace(String path, Controls c) throws Exception {
 		workspace = getWorkspaceForPath(path);
 		updateWorkspaceFileList(c);
 	}
 	
 	public void scanNewWorkspace(String pathCamera, String pathExtAudio, String filemaskVideo,
-			String filemaskAudio, boolean update, ProgressMonitor m, MainFrame.Controls c)
+			String filemaskAudio, boolean update, ProgressMonitor m, Controls c)
 			throws Exception {
 		try {
 			workspace = getWorkspaceFromScan(pathCamera, filemaskVideo, pathExtAudio, filemaskAudio,
@@ -60,7 +60,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 		updateWorkspaceFileList(c);
 	}
 	
-	public void clearWorkspace(MainFrame.Controls c) {
+	public void clearWorkspace(Controls c) {
 		workspace = null;
 		updateWorkspaceFileList(c);
 	}
@@ -69,7 +69,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 		return workspace;
 	}
 	
-	private void updateWorkspaceFileList(MainFrame.Controls c) {
+	private void updateWorkspaceFileList(Controls c) {
 		JTable fl = c.getFileList();
 		if (workspace != null) {
 			((AVFileTableModel)fl.getModel()).setFiles(workspace.contents());
@@ -84,7 +84,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 	}
 	
 	public static final String STAG_MATCH = "";
-	public void toggleStag(MainFrame.Controls c, int row, int col) throws Exception {
+	public void toggleStag(Controls c, int row, int col) throws Exception {
 		if (STAG_MATCH.equals((String)c.getFileList().getValueAt(row, col))) return;
 		AVClipNDir cd = workspace.findClip(new File(getFilePath(row, col, c)));
 		boolean needStag = !workspace.getMatchBox().isStag(cd.clip, cd.dir.getType());
@@ -101,7 +101,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 	 * @param videoChanged true if the video clip needs to be changed, false otherwise
 	 * @param clap an Event representing the new clap position
 	 * */
-	public AVClip setClapEvent(AVClip vClip, AVClip aClip, boolean videoChanged, Event clap, MainFrame.Controls c) {
+	public AVClip setClapEvent(AVClip vClip, AVClip aClip, boolean videoChanged, Event clap, Controls c) {
     	_l.log(Level.FINE, "Selected new " + (videoChanged ? "camera" : "ext. audio") + " clap point of " + clap.getTime());
     	AVClip ret = null;
     	if (videoChanged) {
@@ -135,7 +135,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
     	return ret;
 	}
 	
-	public void startWaveGraphs(MainFrame.Controls c, int row) throws Exception {
+	public void startWaveGraphs(Controls c, int row) throws Exception {
 		AVClipNDir vClip = null, aClip = null;
 		boolean haveVideo = !(STAG_MATCH.equals((String)c.getFileList().getValueAt(row, 0)));
 		if (haveVideo)
@@ -217,7 +217,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 				acd.clip.getOffset(), aStartGraphOffset, graphTimeSpan);
 	}
 	
-	private String getFilePath(int row, int col, MainFrame.Controls c) {
+	private String getFilePath(int row, int col, Controls c) {
 		StringBuilder filePath = new StringBuilder(((col == 0) ? workspace.getVideoDir() : workspace.getAudioDir()).getPath());
 		filePath.append(System.getProperty("file.separator"));
 		filePath.append((String)c.getFileList().getValueAt(row, col));
@@ -229,7 +229,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 	 * @param col the column number of the video/audio file (0 or 1)
 	 * @param c Controls reference
 	 *  */
-	private String getSelectedFilePath(int row, int col, MainFrame.Controls c) {
+	private String getSelectedFilePath(int row, int col, Controls c) {
 		if (row < 0) row = c.getFileList().getSelectedRow();
 		String fileName = (String)c.getFileList().getValueAt(row, col);
 		if (fileName.contentEquals(STAG_MATCH))
@@ -238,7 +238,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 	}
 	
 	/** All GUI media-play calls get funneled down to this. */
-	private void doPlay(String filePath, MainFrame.Controls c) throws Exception {
+	private void doPlay(String filePath, Controls c) throws Exception {
 		String viewType = c.getViewType().toString().toLowerCase();
 		_l.log(Level.FINE, "View " + filePath + " portion " + viewType);
 		JPanel vp = c.getViewPanel();
@@ -250,7 +250,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 				(String)c.getMergeFormat().getSelectedItem(), width, height, x, y);
 	}
 	
-	public void autoPlayIfNeeded(int row, MainFrame.Controls c) throws Exception {
+	public void autoPlayIfNeeded(int row, Controls c) throws Exception {
 		if (!c.getAutoView().isSelected()) return;
 		int vcol = 0, acol = 1;
 		String vpath = getSelectedFilePath(row, vcol, c),
@@ -259,7 +259,7 @@ class Backend extends Session { // WIP: rename backend to GUISession
 		doPlay(vpath, c);
 	}
 	
-	public void play(MainFrame.Controls c) {
+	public void play(Controls c) {
 		int col = c.getViewType() == PreviewPanel.ViewType.AUDIO ? 1 : 0;
 		String playFile = getSelectedFilePath(-1, col, c);
 		if (playFile == null) return;
@@ -271,12 +271,12 @@ class Backend extends Session { // WIP: rename backend to GUISession
 		}
 	}
 
-	public static Backend loadFromCache(String cacheDir, MainFrame mf) throws IOException {
+	public static GuiSession loadFromCache(String cacheDir, MainFrame mf) throws IOException {
 		boolean needTry = true;
-		Backend backend = null;
+		GuiSession guiSession = null;
 		while (needTry) {
 			try {
-				backend = new Backend(cacheDir);
+				guiSession = new GuiSession(cacheDir);
 				needTry = false;
 			}
 			catch(AVEngine.RequiredComponentMissing rcm) {
@@ -310,6 +310,6 @@ class Backend extends Session { // WIP: rename backend to GUISession
 				System.exit(4);
 			}
 		}
-		return backend;
+		return guiSession;
 	}
 }

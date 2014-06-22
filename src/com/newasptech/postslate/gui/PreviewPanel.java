@@ -28,7 +28,7 @@ class PreviewPanel extends BasePanel {
 	/**
 	 * Create the panel.
 	 */
-	public PreviewPanel(MainFrame f, Backend m) {
+	public PreviewPanel(MainFrame f, GuiSession m) {
 		super(f, m);
 		setLayout(new FormLayout(new ColumnSpec[] {
 				FormFactory.RELATED_GAP_COLSPEC,

@@ -51,7 +51,7 @@ class SyncPanel extends BasePanel {
 	/**
 	 * Create the panel.
 	 */
-	public SyncPanel(MainFrame f, Backend m) {
+	public SyncPanel(MainFrame f, GuiSession m) {
 		super(f, m);
 		setLayout(new FormLayout(new ColumnSpec[] {
 				FormFactory.RELATED_GAP_COLSPEC,

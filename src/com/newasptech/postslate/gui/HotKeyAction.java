@@ -13,7 +13,6 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 
 import com.newasptech.postslate.audio.Event;
-import com.newasptech.postslate.gui.MainFrame.Controls;
 
 public class HotKeyAction extends AbstractAction {
 	private static final long serialVersionUID = 1L;
@@ -23,11 +22,11 @@ public class HotKeyAction extends AbstractAction {
 			NEXT_AUDIO_CLAP = "NextAudioClap", PREV_AUDIO_CLAP = "PrevAudioClap",
 			PLAY = "Play", PLAY_CLAP = "PlayClap", PLAY_FULL = "PlayFull",
 			PLAY_VIDEO = "PlayVideo", PLAY_AUDIO = "PlayAudio";
-	private Backend backend;
+	private GuiSession guiSession;
 	private Controls controls;
-	public HotKeyAction(String name, Backend _backend, Controls _controls) {
+	public HotKeyAction(String name, GuiSession _backend, Controls _controls) {
 		super(name);
-		backend = _backend;
+		guiSession = _backend;
 		controls = _controls;
 	}
 	public void actionPerformed(ActionEvent e) {
@@ -58,7 +57,7 @@ public class HotKeyAction extends AbstractAction {
 		}
 		else if (n.contentEquals(PLAY)) {
 			_l.fine("Play");
-			backend.play(controls);
+			guiSession.play(controls);
 		}
 		else if (n.contentEquals(PLAY_CLAP)) {
 			_l.fine("Select play clap");
@@ -90,7 +89,7 @@ public class HotKeyAction extends AbstractAction {
 		if (newRow >= 0 && newRow < flist.getRowCount())
 			flist.changeSelection(newRow, 0, false, true);
 	}
-	public static void attachToPanel(JPanel panel, Backend backend, Controls controls) {
+	public static void attachToPanel(JPanel panel, GuiSession guiSession, Controls controls) {
 		InputMap im = panel.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
 		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, ActionEvent.ALT_MASK, false),
 				NEXT_CLIP);
@@ -116,7 +115,7 @@ public class HotKeyAction extends AbstractAction {
 				PLAY_AUDIO);
 		ActionMap am = panel.getActionMap();
 		for (String tag : getActionTags()) {
-			am.put(tag, new HotKeyAction(tag, backend, controls));
+			am.put(tag, new HotKeyAction(tag, guiSession, controls));
 		}
 	}
 	public static String[] getActionTags() {
