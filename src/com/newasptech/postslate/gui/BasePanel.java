@@ -30,7 +30,7 @@ class BasePanel extends JPanel {
 		return mainFrame;
 	}
 	
-	public GuiSession getBackend() {
+	public GuiSession getSession() {
 		return guiSession;
 	}
 	

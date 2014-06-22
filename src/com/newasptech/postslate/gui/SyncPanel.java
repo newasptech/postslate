@@ -92,7 +92,7 @@ class SyncPanel extends BasePanel {
 		JLabel lblShow = new JLabel("Show");
 		add(lblShow, "2, 2");
 		
-		spnCandidates.setModel(new SpinnerNumberModel(10, 10, getBackend().getConfig().ivalue(Config.SCAN_EVENTS), 1));
+		spnCandidates.setModel(new SpinnerNumberModel(10, 10, getSession().getConfig().ivalue(Config.SCAN_EVENTS), 1));
 		spnCandidates.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				updateEventLists();
@@ -205,11 +205,9 @@ class SyncPanel extends BasePanel {
 	
 	private void setNewClapPosition(boolean isVideo, Event clap) {
 		if (isVideo)
-			videoClip = getBackend().setClapEvent(videoClip, audioClip, isVideo,
-					clap, getMainFrame().controls());
+			videoClip = getSession().setClapEvent(videoClip, audioClip, isVideo, clap);
 		else
-			audioClip = getBackend().setClapEvent(videoClip, audioClip, isVideo,
-					clap, getMainFrame().controls());
+			audioClip = getSession().setClapEvent(videoClip, audioClip, isVideo, clap);
 	}
 	private AVClip videoClip = null, audioClip = null;
 	

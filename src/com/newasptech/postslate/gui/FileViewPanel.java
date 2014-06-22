@@ -12,11 +12,8 @@ import com.jgoodies.forms.factories.FormFactory;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Point;
 import java.io.File;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,13 +31,9 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 
 import com.newasptech.postslate.AVDirRef;
-import com.newasptech.postslate.AVPair;
 import com.newasptech.postslate.Config;
-import com.newasptech.postslate.MatchBox;
 import com.newasptech.postslate.Workspace;
 
 class FileViewPanel extends BasePanel {
@@ -132,13 +125,13 @@ class FileViewPanel extends BasePanel {
 		cboCameraNameMask = new JComboBox<VideoFileMaskOptions>();
 		cboCameraNameMask.setModel(new DefaultComboBoxModel<VideoFileMaskOptions>(VideoFileMaskOptions.values()));
 		cboCameraNameMask.setToolTipText("Filename filter for video files.\n" +
-				"Customize this by editing the settings in\n" + getBackend().getConfig().saveloc(getBackend().getCache().getBasedir()));
+				"Customize this by editing the settings in\n" + getSession().getConfig().saveloc(getSession().getCache().getBasedir()));
 		add(cboCameraNameMask, "6, 6, fill, default");
 		
 		cboExtAudioNameMask = new JComboBox<AudioFileMaskOptions>();
 		cboExtAudioNameMask.setModel(new DefaultComboBoxModel<AudioFileMaskOptions>(AudioFileMaskOptions.values()));
 		cboExtAudioNameMask.setToolTipText("Filename filter for audio files.\n" +
-				"Customize this by editing the settings in\n" + getBackend().getConfig().saveloc(getBackend().getCache().getBasedir()));
+				"Customize this by editing the settings in\n" + getSession().getConfig().saveloc(getSession().getCache().getBasedir()));
 		add(cboExtAudioNameMask, "6, 10, fill, default");
 		
 		listFiles = new JTable(new AVFileTableModel());
@@ -241,7 +234,7 @@ class FileViewPanel extends BasePanel {
 		DirectoryState retval = DirectoryState.UNUSABLE;
 		if (dsa.isOk()) {
 			retval = DirectoryState.USABLE;
-			String fileCachePath = getBackend().getCache().indexForFiles(dsa.getFile().getAbsolutePath(), type);
+			String fileCachePath = getSession().getCache().indexForFiles(dsa.getFile().getAbsolutePath(), type);
 			if ((new File(fileCachePath)).exists())
 				retval = DirectoryState.SCANNED;
 		}
@@ -252,42 +245,12 @@ class FileViewPanel extends BasePanel {
 	private void scanClicked() {
 		boolean update = btnScan.getText().equals(BTN_LABEL_RESCAN);
 		ProgressMonitor m = getMainFrame().getProgressMonitor(0, 100, "Scanning Files");
-		ScanThread t = new ScanThread(getBackend(), dsaCameraPath.getFile().getAbsolutePath(),
+		ScanThread t = new ScanThread(getSession(), dsaCameraPath.getFile().getAbsolutePath(),
 				dsaExtAudioPath.getFile().getAbsolutePath(),
 				((VideoFileMaskOptions)cboCameraNameMask.getSelectedItem()).filemask,
 				((AudioFileMaskOptions)cboExtAudioNameMask.getSelectedItem()).filemask,
-				update, m, getMainFrame().controls());
+				update, m);
 		t.start();		
-	}
-	
-	class ScanThread extends Thread {
-		private GuiSession guiSession;
-		private String cameraPath, extAudioPath, vFilemask, aFilemask;
-		private boolean update;
-		private ProgressMonitor m;
-		private Controls c;
-		public ScanThread(GuiSession _backend, String _cameraPath, String _extAudioPath, String _vFilemask, String _aFilemask, boolean _update, ProgressMonitor _m, Controls _c) {
-			guiSession = _backend;
-			cameraPath = _cameraPath;
-			extAudioPath = _extAudioPath;
-			vFilemask = _vFilemask;
-			aFilemask = _aFilemask;
-			update = _update;
-			m = _m;
-			c = _c;
-		}
-		public void run() {
-			try {
-				guiSession.scanNewWorkspace(cameraPath, extAudioPath, vFilemask, aFilemask, update, m, c);
-			}
-			catch(Exception ex) {
-				report(ex);
-			}
-			finally {
-				m.close();
-			}
-			btnScan.setText(BTN_LABEL_RESCAN);
-		}
 	}
 	
 	private void changedPath(AVDirRef.Type type0, DirectorySelectionAdapter txt0, DirectorySelectionAdapter txt1) {
@@ -297,15 +260,15 @@ class FileViewPanel extends BasePanel {
 		switch(state0) {
 		case UNUSABLE:
 		case USABLE:
-			getBackend().clearWorkspace(getMainFrame().controls());
+			getSession().clearWorkspace();
 			btnScan.setText(BTN_LABEL_SCAN);
 			btnScan.setEnabled(state0 == DirectoryState.USABLE
 					&& getState(txt1, type0==AVDirRef.Type.VIDEO?AVDirRef.Type.AUDIO:AVDirRef.Type.VIDEO) == DirectoryState.USABLE);
 			break;
 		case SCANNED:
 			try {
-				getBackend().loadWorkspace(txt0.getFile().getAbsolutePath(), getMainFrame().controls());
-				w = getBackend().getWorkspace();
+				getSession().loadWorkspace(txt0.getFile().getAbsolutePath());
+				w = getSession().getWorkspace();
 			}
 			catch(Exception e) {
 				report(e);
@@ -320,6 +283,38 @@ class FileViewPanel extends BasePanel {
 		}
 	}
 	
+	public JTable getFileList() { return listFiles; }
+	public DirectorySelectionAdapter getCameraPath() { return dsaCameraPath; }
+	public DirectorySelectionAdapter getExtAudioPath() { return dsaExtAudioPath; }
+	
+	class ScanThread extends Thread {
+		private GuiSession guiSession;
+		private String cameraPath, extAudioPath, vFilemask, aFilemask;
+		private boolean update;
+		private ProgressMonitor m;
+		public ScanThread(GuiSession _session, String _cameraPath, String _extAudioPath, String _vFilemask, String _aFilemask, boolean _update, ProgressMonitor _m) {
+			guiSession = _session;
+			cameraPath = _cameraPath;
+			extAudioPath = _extAudioPath;
+			vFilemask = _vFilemask;
+			aFilemask = _aFilemask;
+			update = _update;
+			m = _m;
+		}
+		public void run() {
+			try {
+				guiSession.scanNewWorkspace(cameraPath, extAudioPath, vFilemask, aFilemask, update, m);
+			}
+			catch(Exception ex) {
+				report(ex);
+			}
+			finally {
+				m.close();
+			}
+			btnScan.setText(BTN_LABEL_RESCAN);
+		}
+	}
+	
 	class AVFileTableListener extends MouseAdapter implements ListSelectionListener {
 		public void mouseClicked(MouseEvent e) {
 			int row = listFiles.rowAtPoint(new Point(e.getX(), e.getY()));
@@ -327,7 +322,7 @@ class FileViewPanel extends BasePanel {
 			int stagOnMask = MouseEvent.CTRL_DOWN_MASK;
 			try {
 				if ((e.getModifiersEx() & stagOnMask) == stagOnMask)
-					getBackend().toggleStag(getMainFrame().controls(), row, col);
+					getSession().toggleStag(row, col);
 			}
 			catch(Exception ex) {
 				report(ex);
@@ -337,97 +332,12 @@ class FileViewPanel extends BasePanel {
 			if (e.getValueIsAdjusting()) return;
 			int row = listFiles.getSelectedRow();
 			try {
-				getBackend().startWaveGraphs(getMainFrame().controls(), row);
-				getBackend().autoPlayIfNeeded(row, getMainFrame().controls());
+				getSession().startWaveGraphs(row);
+				getSession().autoPlayIfNeeded(row);
 			}
 			catch(Exception ex) {
 				report(ex);
 			}
 		}
 	}
-	
-	public static class AVFileTableRenderer extends DefaultTableCellRenderer {
-		private static final long serialVersionUID = 1L;
-		private static final Color stagBackgroundColor = new Color(192, 192, 192),
-				nonstagBackgroundColor = new Color(255, 255, 255),
-				matchForegroundColor = new Color(37, 141, 72), defForegroundColor = new Color(0, 0, 0);
-		private GuiSession guiSession;
-		public AVFileTableRenderer(GuiSession _backend) {
-			guiSession = _backend;
-		}
-		public Component getTableCellRendererComponent(JTable table, Object value,
-				boolean isSelected, boolean hasFocus, int row, int column) {
-			AVFileTableModel m = (AVFileTableModel)table.getModel();
-			MatchBox mbox = guiSession.getWorkspace().getMatchBox();
-			AVPair pair = m.getPairAt(row);
-			if (
-				(pair.video() != null && mbox.isStagVideo(pair.video()))
-				|| (pair.audio() != null && mbox.isStagAudio(pair.audio()))
-				) {
-				setBackground(stagBackgroundColor);
-				setForeground(defForegroundColor);
-			}
-			else {
-				if (pair.video() != null && mbox.hasMatchForVideo(pair.video()))
-					setForeground(matchForegroundColor);
-				else
-					setForeground(defForegroundColor);
-				setBackground(nonstagBackgroundColor);
-			}
-			return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-		}
-	}
-	
-	public static class AVFileTableModel extends AbstractTableModel {
-		private final static long serialVersionUID = 1L;
-		List<AVPair> avPairs = null;
-		public void setFiles(List<AVPair> _avPairs) {
-			avPairs = _avPairs;
-		}
-		public int getRowCount() {
-			if (avPairs == null) return 0;
-			return avPairs.size();
-		}
-		public int getColumnCount() {
-			return 2;
-		}
-		public Object getValueAt(int row, int column) {
-			AVPair p = null;
-			if (avPairs != null && row >= 0 && row < avPairs.size()) {
-				p = avPairs.get(row);
-				switch(column) {
-				case 0:
-					if (p.video() != null)
-						return p.video().getName();
-					break;
-				case 1:
-					if (p.audio() != null)
-						return p.audio().getName();
-					break;
-				}
-			}
-			return GuiSession.STAG_MATCH;
-		}
-		public String getColumnName(int columnIndex) {
-			switch(columnIndex) {
-			case 0:
-				return CAMERA_CLIP_HEADER;
-			case 1:
-				return EXTAUDIO_CLIP_HEADER;
-			default:
-				assert(false);
-			}
-			return null;
-		}
-		public AVPair getPairAt(int row) {
-			if (row >= 0 && row < avPairs.size())
-				return avPairs.get(row);
-			return null;
-		}
-		public static final String CAMERA_CLIP_HEADER = "Camera", EXTAUDIO_CLIP_HEADER = "Ext. Audio";
-	}
-	
-	public JTable getFileList() { return listFiles; }
-	public DirectorySelectionAdapter getCameraPath() { return dsaCameraPath; }
-	public DirectorySelectionAdapter getExtAudioPath() { return dsaExtAudioPath; }
 }

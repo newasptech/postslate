@@ -92,7 +92,7 @@ public class MainFrame extends JFrame {
 				RowSpec.decode("min(100dlu;default)"),
 				FormFactory.RELATED_GAP_ROWSPEC,
 				}));
-		
+
 		guiSession = GuiSession.loadFromCache(cacheDir, this);
 		panelFileView = new FileViewPanel(this, guiSession);
 		contentPane.add(panelFileView, "2, 2, 1, 5, fill, fill");
@@ -109,13 +109,6 @@ public class MainFrame extends JFrame {
 		
 		panelSync = new SyncPanel(this, guiSession);
 		contentPane.add(panelSync, "4, 6, 1, 3, fill, fill");
-		
-		if (propertiesFile.exists()) {
-			Properties p = new Properties();
-			_l.log(Level.FINE, "Load GUI control values from " + propertiesFile.toString());
-			p.load(new FileInputStream(propertiesFile));
-			controls().set(p);
-		}
 		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -136,6 +129,13 @@ public class MainFrame extends JFrame {
 		Image windowIcon = slateImage(); 
 		setIconImage(windowIcon);
 		setupMenu();
+		
+		if (propertiesFile.exists()) {
+			Properties p = new Properties();
+			_l.log(Level.FINE, "Load GUI control values from " + propertiesFile.toString());
+			p.load(new FileInputStream(propertiesFile));
+			controls().set(p);
+		}
 	}
 	
 	public static Image slateImage() {

@@ -25,9 +25,9 @@ public class HotKeyAction extends AbstractAction {
 			PLAY_VIDEO = "PlayVideo", PLAY_AUDIO = "PlayAudio";
 	private GuiSession guiSession;
 	private Controls controls;
-	public HotKeyAction(String name, GuiSession _backend, Controls _controls) {
+	public HotKeyAction(String name, GuiSession _session, Controls _controls) {
 		super(name);
-		guiSession = _backend;
+		guiSession = _session;
 		controls = _controls;
 	}
 	public void actionPerformed(ActionEvent e) {
@@ -58,7 +58,7 @@ public class HotKeyAction extends AbstractAction {
 		}
 		else if (n.contentEquals(PLAY)) {
 			_l.fine("Play");
-			guiSession.play(controls);
+			guiSession.play();
 		}
 		else if (n.contentEquals(PLAY_CLAP)) {
 			_l.fine("Select play clap");

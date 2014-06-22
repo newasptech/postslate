@@ -55,7 +55,7 @@ class PreviewPanel extends BasePanel {
 		JButton btnView = new JButton("Play");
 		btnView.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
-				getBackend().play(getMainFrame().controls());
+				getSession().play();
 			}
 		});
 		btnView.setToolTipText("Preview the item selected at right.");

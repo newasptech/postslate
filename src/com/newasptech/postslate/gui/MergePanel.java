@@ -112,7 +112,7 @@ class MergePanel extends BasePanel {
 						try {
 							MergeController mc = new MergeController(txtMergePath.getText(), (String)cboMergeFormat.getSelectedItem(),
 									chkSeparate.isSelected(), chkRetainVideo.isSelected(), chkRetainAudio.isSelected(),
-									chkRetainData.isSelected(), (Float)(spnVShift.getValue()), null, null, getBackend().getWorkspace());
+									chkRetainData.isSelected(), (Float)(spnVShift.getValue()), null, null, getSession().getWorkspace());
 							mc.mergeAll(getMainFrame().getProgressMonitor(0, 100, "Merging"));
 						}
 						catch(Exception ex) {
@@ -137,7 +137,7 @@ class MergePanel extends BasePanel {
 		add(cboMergeFormat, "4, 8, 3, 1, fill, default");
 		cboMergeFormat.setToolTipText("The output container format: avi, mov, etc.");
 		setMergeFormats();
-		cboMergeFormat.setSelectedItem(getBackend().getConfig().getProperty(Config.MERGE_FORMAT));
+		cboMergeFormat.setSelectedItem(getSession().getConfig().getProperty(Config.MERGE_FORMAT));
 		
 		JLabel lblMergePath = new JLabel("to path");
 		add(lblMergePath, "4, 10, right, default");
@@ -199,7 +199,7 @@ class MergePanel extends BasePanel {
 	}
 	
 	private void setMergeFormats() {
-		GuiSession b = getBackend();
+		GuiSession b = getSession();
 		for (String format : b.getAVEngine().outputFormats()) {
 			cboMergeFormat.addItem(format);
 		}
