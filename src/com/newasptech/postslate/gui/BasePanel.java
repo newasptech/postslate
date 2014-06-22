@@ -15,6 +15,7 @@ class BasePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private MainFrame mainFrame = null;
 	private Backend backend = null;
+	// WIP: move to the ViewController class
 	public enum ViewType {
 		CLAP,
 		FULL,

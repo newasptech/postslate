@@ -8,7 +8,6 @@ package com.newasptech.postslate.gui;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.CancellationException;
@@ -21,9 +20,9 @@ import javax.swing.JTable;
 
 import com.newasptech.postslate.AVClip;
 import com.newasptech.postslate.AVEngine;
-import com.newasptech.postslate.Cache;
-import com.newasptech.postslate.Cmd;
 import com.newasptech.postslate.Config;
+import com.newasptech.postslate.Session;
+import com.newasptech.postslate.TrimValues;
 import com.newasptech.postslate.Workspace;
 import com.newasptech.postslate.AVClipNDir;
 import com.newasptech.postslate.audio.Event;
@@ -33,43 +32,27 @@ import com.newasptech.postslate.gui.FileViewPanel.AVFileTableRenderer;
 import com.newasptech.postslate.util.Misc;
 
 /** Class for back-end GUI-related A/V manipulation. */
-class Backend {
+class Backend extends Session { // WIP: rename backend to GUISession
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.Backend");
-	private Cache cache = null;
-	private Config config = null;
-	private Workspace wksp = null;
-
-	public Backend(String cacheDir) throws Exception {
-		cache = new Cache(cacheDir);
-		config = new Config(cache.getBasedir());
-		Cmd.initLogging(config);
-		getAVEngine(config).check();
-	}
-
-	public Cache getCache() {
-		return cache;
-	}
+	private Workspace workspace = null;
 	
-	public Config getConfig() {
-		return config;
-	}
-	
-	public Workspace getWorkspace() {
-		return wksp;
+	public Backend(String cacheDir)
+			throws IOException, AVEngine.ComponentCheckFailed, AVEngine.OptionalComponentMissing,
+			AVEngine.RequiredComponentMissing {
+		super(cacheDir);
 	}
 
-	public Workspace loadWorkspace(String path, MainFrame.Controls c) throws Exception {
-		wksp = new Workspace(path, getConfig(),	getCache(), getAVEngine(getConfig()), null);
+	public void loadWorkspace(String path, MainFrame.Controls c) throws Exception {
+		workspace = getWorkspaceForPath(path);
 		updateWorkspaceFileList(c);
-		return wksp;
 	}
 	
 	public void scanNewWorkspace(String pathCamera, String pathExtAudio, String filemaskVideo,
 			String filemaskAudio, boolean update, ProgressMonitor m, MainFrame.Controls c)
 			throws Exception {
 		try {
-			wksp = Cmd.matchDirs(getCache(), pathCamera, pathExtAudio,
-				filemaskVideo, filemaskAudio, update, getConfig(), m);
+			workspace = getWorkspaceFromScan(pathCamera, filemaskVideo, pathExtAudio, filemaskAudio,
+					update, m);
 		}
 		catch(CancellationException cex) {
 			_l.log(Level.INFO, "User canceled the operation");
@@ -78,15 +61,18 @@ class Backend {
 	}
 	
 	public void clearWorkspace(MainFrame.Controls c) {
-		wksp = null;
+		workspace = null;
 		updateWorkspaceFileList(c);
+	}
+	
+	public Workspace getWorkspace() {
+		return workspace;
 	}
 	
 	private void updateWorkspaceFileList(MainFrame.Controls c) {
 		JTable fl = c.getFileList();
-		List<Workspace.AVPair> avPairs = wksp != null ? wksp.contents() : null;
-		if (avPairs != null) {
-			((AVFileTableModel)fl.getModel()).setFiles(avPairs);
+		if (workspace != null) {
+			((AVFileTableModel)fl.getModel()).setFiles(workspace.contents());
 			fl.getColumn(AVFileTableModel.CAMERA_CLIP_HEADER).setCellRenderer(new AVFileTableRenderer(this));
 			fl.getColumn(AVFileTableModel.EXTAUDIO_CLIP_HEADER).setCellRenderer(new AVFileTableRenderer(this));
 			fl.revalidate();
@@ -97,20 +83,15 @@ class Backend {
 		}
 	}
 	
-	public AVEngine getAVEngine(Config cfg) {
-		return Cmd.getTheAVEngine(cfg);
-	}
-
 	public static final String STAG_MATCH = "";
 	public void toggleStag(MainFrame.Controls c, int row, int col) throws Exception {
 		if (STAG_MATCH.equals((String)c.getFileList().getValueAt(row, col))) return;
-		Workspace w = getWorkspace();
-		AVClipNDir cd = w.findClip(new File(getFilePath(row, col, c)));
-		boolean needStag = !w.getMatchBox().isStag(cd.clip, cd.dir.getType());
-		w.getMatchBox().remove(cd.clip);
+		AVClipNDir cd = workspace.findClip(new File(getFilePath(row, col, c)));
+		boolean needStag = !workspace.getMatchBox().isStag(cd.clip, cd.dir.getType());
+		workspace.getMatchBox().remove(cd.clip);
 		if (needStag)
-			w.getMatchBox().addStag(cd.clip, cd.dir.getType());
-		w.saveMatches();
+			workspace.getMatchBox().addStag(cd.clip, cd.dir.getType());
+		workspace.saveMatches();
 		updateWorkspaceFileList(c);
 	}
 	
@@ -122,30 +103,29 @@ class Backend {
 	 * */
 	public AVClip setClapEvent(AVClip vClip, AVClip aClip, boolean videoChanged, Event clap, MainFrame.Controls c) {
     	_l.log(Level.FINE, "Selected new " + (videoChanged ? "camera" : "ext. audio") + " clap point of " + clap.getTime());
-    	Workspace wksp = getWorkspace();
     	AVClip ret = null;
     	if (videoChanged) {
     		AVClip newVClip = new AVClip(vClip, clap.getTime(), vClip.getDuration(),
     				Misc.range(vClip.getMeta().size()));
-    		if (wksp.getMatchBox().hasMatchForVideo(newVClip))
-    			wksp.getMatchBox().removeVideo(newVClip);
+    		if (workspace.getMatchBox().hasMatchForVideo(newVClip))
+    			workspace.getMatchBox().removeVideo(newVClip);
     		vClip = newVClip;
     		ret = newVClip;
 	    }
     	else {
     		AVClip newAClip = new AVClip(aClip, clap.getTime(), aClip.getDuration(),
     				Misc.range(aClip.getMeta().size()));
-    		if (wksp.getMatchBox().hasMatchForAudio(newAClip))
-    			wksp.getMatchBox().removeAudio(newAClip);
+    		if (workspace.getMatchBox().hasMatchForAudio(newAClip))
+    			workspace.getMatchBox().removeAudio(newAClip);
     		aClip = newAClip;
     		ret = newAClip;
 	    }
-    	wksp.getMatchBox().addMatch(vClip, aClip);
+    	workspace.getMatchBox().addMatch(vClip, aClip);
     	try {
-    		wksp.saveMatches();
-    		updateWaveGraphs(new AVClipNDir(vClip, wksp.getVideoDir()),
+    		workspace.saveMatches();
+    		updateWaveGraphs(new AVClipNDir(vClip, workspace.getVideoDir()),
     				(Float)c.getVideoShift().getValue(),
-        			new AVClipNDir(aClip, wksp.getAudioDir()),
+        			new AVClipNDir(aClip, workspace.getAudioDir()),
         			c.getVideoGraphPanel(),	c.getAudioGraphPanel());
         	autoPlayIfNeeded(-1, c);
     	}
@@ -159,10 +139,10 @@ class Backend {
 		AVClipNDir vClip = null, aClip = null;
 		boolean haveVideo = !(STAG_MATCH.equals((String)c.getFileList().getValueAt(row, 0)));
 		if (haveVideo)
-			vClip = wksp.findClip(new File(getFilePath(row, 0, c)));
+			vClip = workspace.findClip(new File(getFilePath(row, 0, c)));
 		boolean haveAudio = !(STAG_MATCH.equals((String)c.getFileList().getValueAt(row, 1)));
 		if (haveAudio)
-			aClip = wksp.findClip(new File(getFilePath(row, 1, c)));
+			aClip = workspace.findClip(new File(getFilePath(row, 1, c)));
 		updateWaveGraphs(vClip, (Float)c.getVideoShift().getValue(), aClip, c.getVideoGraphPanel(), c.getAudioGraphPanel());
 		c.getSyncPanel().setClips(vClip != null ? vClip.clip : null, aClip != null ? aClip.clip : null);
 	}
@@ -175,7 +155,7 @@ class Backend {
 		float vTrimStart = 0.0f, aTrimStart = 0.0f, trimDuration = -1.0f, vClipLen = -1.0f, aClipLen = -1.0f,
 			graphTimeSpan = -1.0f, vStartGraphOffset = 0.0f, aStartGraphOffset = 0.0f;
 		AVClipNDir vcd = null;
-		AVEngine ave = getAVEngine(getConfig());
+		AVEngine ave = getAVEngine();
 		if (vc0 != null) {
 			vcd = new AVClipNDir(new AVClip(vc0.clip, vc0.clip.getOffset(), vc0.clip.getDuration(),
 				new int[]{vc0.clip.getMeta().findFirstIndex(ave.metaKeyName(AVEngine.MetaKey.CODEC_TYPE),
@@ -210,12 +190,13 @@ class Backend {
 		}
 		else _l.log(Level.FINE, "audio clip is null");
 		if (vcd != null && acd != null) {
-			float[] bounds = Cmd.trimBoundaries(vClipLen, vcd.clip.getOffset(),
+			TrimValues trimValues = new TrimValues(vClipLen, vcd.clip.getOffset(),
 					vShift,	aClipLen, acd.clip.getOffset());
-			vTrimStart = bounds[0];
-			aTrimStart = bounds[1];
-			trimDuration = bounds[2];
-			_l.log(Level.FINE, String.format("video trim start = %.6f, audio trim start = %.6f, trim duration = %.6f", vTrimStart, aTrimStart, trimDuration));
+			vTrimStart = trimValues.getVideoStart();
+			aTrimStart = trimValues.getAudioStart();
+			trimDuration = trimValues.getDuration();
+			_l.log(Level.FINE, String.format("video trim start = %.6f, audio trim start = %.6f, trim duration = %.6f",
+					vTrimStart, aTrimStart, trimDuration));
 			float graphBeforeClap, graphAfterClap = Math.max(vClipLen - vcd.clip.getOffset(), aClipLen - acd.clip.getOffset());
 			if (vcd.clip.getOffset() > acd.clip.getOffset()) {
 				graphBeforeClap = vcd.clip.getOffset();
@@ -237,8 +218,7 @@ class Backend {
 	}
 	
 	private String getFilePath(int row, int col, MainFrame.Controls c) {
-		Workspace w = getWorkspace();
-		StringBuilder filePath = new StringBuilder(((col == 0) ? w.getVideoDir() : w.getAudioDir()).getPath());
+		StringBuilder filePath = new StringBuilder(((col == 0) ? workspace.getVideoDir() : workspace.getAudioDir()).getPath());
 		filePath.append(System.getProperty("file.separator"));
 		filePath.append((String)c.getFileList().getValueAt(row, col));
 		return filePath.toString();
@@ -265,9 +245,9 @@ class Backend {
 		Point lhCorner = vp.getLocationOnScreen();
 		int width = vp.getWidth(), height = vp.getHeight(),
 				x = (int)lhCorner.getX(), y = (int)lhCorner.getY();
-		Cmd.view(getCache(), filePath, viewType, (Float)c.getVideoShift().getValue(),
-				(String)c.getMergeFormat().getSelectedItem(), getConfig(),
-				width, height, x, y);
+		File avFile = new File(filePath);
+		workspace.view(avFile, viewType, (Float)c.getVideoShift().getValue(),
+				(String)c.getMergeFormat().getSelectedItem(), width, height, x, y);
 	}
 	
 	public void autoPlayIfNeeded(int row, MainFrame.Controls c) throws Exception {

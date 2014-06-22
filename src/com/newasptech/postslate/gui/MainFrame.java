@@ -209,6 +209,7 @@ public class MainFrame extends JFrame {
 		}
 	}
 	
+	// WIP: factor-out as a separate class
 	public class Controls {
 		public JCheckBox getAutoView() { return panelPreviewCtl.getAutoView(); }
 		public DirectorySelectionAdapter getCameraPath() { return panelFileView.getCameraPath(); }

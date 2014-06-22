@@ -16,7 +16,6 @@ import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.RowSpec;
 import com.jgoodies.forms.factories.FormFactory;
 
-import com.newasptech.postslate.Cmd;
 import com.newasptech.postslate.Config;
 
 import javax.swing.JButton;
@@ -110,12 +109,10 @@ class MergePanel extends BasePanel {
 				Thread t = new Thread() {
 					public void run() {
 						try {
-							Cmd.merge(getBackend().getCache(),
-								getMainFrame().controls().getCameraPath().getFile().getAbsolutePath(),
-								txtMergePath.getText(), (String)cboMergeFormat.getSelectedItem(),
+							getBackend().getWorkspace().merge(txtMergePath.getText(), (String)cboMergeFormat.getSelectedItem(),
 								chkSeparate.isSelected(), chkRetainVideo.isSelected(), chkRetainAudio.isSelected(),
 								chkRetainData.isSelected(), (Float)(spnVShift.getValue()), null, null,
-								getBackend().getConfig(), getMainFrame().getProgressMonitor(0, 100, "Merging"));
+								getMainFrame().getProgressMonitor(0, 100, "Merging"));
 						}
 						catch(Exception ex) {
 							report(ex);
@@ -202,7 +199,7 @@ class MergePanel extends BasePanel {
 	
 	private void setMergeFormats() {
 		Backend b = getBackend();
-		for (String format : b.getAVEngine(b.getConfig()).outputFormats()) {
+		for (String format : b.getAVEngine().outputFormats()) {
 			cboMergeFormat.addItem(format);
 		}
 	}

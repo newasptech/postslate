@@ -6,113 +6,62 @@
 package com.newasptech.postslate;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
+//import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.CancellationException;
 import java.text.DecimalFormat;
-import javax.swing.ProgressMonitor;
 
 import com.newasptech.postslate.AVClipNDir;
-import com.newasptech.postslate.Workspace.AVPair;
 import com.newasptech.postslate.util.Text;
 
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
 public class Cmd {
+	@SuppressWarnings("unused")
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.Cmd");
 
 	private static final DecimalFormat TIME_FORMAT = new DecimalFormat("###,##0.000000");
 	
-	public static void initLogging(Config cfg) {
-		Level logLevel = cfg.bvalue(Config.DEBUG) ? Level.FINE : Level.WARNING;
-		ConsoleHandler ch = new ConsoleHandler();
-		ch.setLevel(logLevel);
-		Logger l = Logger.getLogger("com.newasptech.postslate");
-		l.setLevel(logLevel);
-		l.addHandler(ch);
-		l.setUseParentHandlers(false);
-	}
-	
-	public static Workspace matchDirs(Cache cache, String vdir, String adir, String vspec,
-			String aspec, boolean update, Config cfg, ProgressMonitor m) throws Exception {
-		AVDirRef vdref = new AVDirRef(AVDirRef.Type.VIDEO, vdir, vspec, adir);
-		AVDirRef adref = new AVDirRef(AVDirRef.Type.AUDIO, adir, aspec, vdir);
-		vdref.save(cache, update);
-		adref.save(cache, update);
-		return new Workspace(vdref, adref, true, cfg, cache, getTheAVEngine(cfg), m);
-	}
-	
-	public static void matchFiles(Cache cache, String vpath, float vpos, String apath,
-			float apos, Config cfg) throws Exception {
-		Workspace wksp = new Workspace(vpath, cfg, cache, getTheAVEngine(cfg), null);
-		File vfile = new File(vpath), afile = new File(apath);
-		AVDirRef vdref = wksp.findAVDir(vfile);
-		AVDirRef adref = wksp.findAVDir(afile);
-		AVClip vclip = new AVClip(wksp.findAVFile(vdref, vfile.getName()), vpos),
-				aclip = new AVClip(wksp.findAVFile(adref, afile.getName()), apos);
-		wksp.getMatchBox().addMatch(vclip, aclip);
-	}
-	
-	public static void unmatch(Cache cache, String vpath, String apath, Config cfg)
-		throws Exception {
-		Workspace wksp = new Workspace(vpath, cfg, cache, getTheAVEngine(cfg), null);
-		AVClipNDir vcd = wksp.findClip(new File(vpath));
-		AVClipNDir acd = wksp.findClip(new File(apath));
-		if (0 != acd.clip.compareTo( wksp.getMatchBox().getMatchedAudio(vcd.clip))) {
-			StringBuffer s = new StringBuffer(vpath);
-			s.append(" is not matched with ");
-			s.append(apath);
-			throw new RuntimeException(s.toString());
-		}
-	}
-	
-	private static void list(Cache cache, String dir, String delim, float vshift, Config cfg)
+	private static void list(String dir, String delim, float vshift, Session s)
 			throws Exception {
-		AVEngine e = getTheAVEngine(cfg);
-		Workspace wksp = new Workspace(dir, cfg, cache, e, null);
-		for (Iterator<Workspace.AVPair> pp = wksp.contents().iterator(); pp.hasNext();) {
-			Workspace.AVPair p = pp.next();
+		Workspace wksp = s.getWorkspaceForPath(dir);
+		for (Iterator<AVPair> pp = wksp.contents().iterator(); pp.hasNext();) {
+			AVPair p = pp.next();
 			String Z = TIME_FORMAT.format(0.0f), NF = "-";
 			String[] parts = new String[]{NF, Z, Z, NF, Z, Z};
-			float vDuration = (p.video() != null) ? AVClip.duration(p.video(), AVEngine.MetaValue.CODEC_TYPE_AUDIO, e) : 0.0f,
-					aDuration = (p.audio() != null) ? AVClip.duration(p.audio(), AVEngine.MetaValue.CODEC_TYPE_AUDIO, e) : 0.0f;
-			float[] bounds = null;
+			float vDuration = (p.video() != null) ? AVClip.duration(p.video(), AVEngine.MetaValue.CODEC_TYPE_AUDIO, s.getAVEngine()) : 0.0f,
+					aDuration = (p.audio() != null) ? AVClip.duration(p.audio(), AVEngine.MetaValue.CODEC_TYPE_AUDIO, s.getAVEngine()) : 0.0f;
+			TrimValues bounds = null;
 			if (p.video() != null && p.audio() != null) {
-				bounds = trimBoundaries(vDuration, p.video().getOffset(), vshift,
+				bounds = new TrimValues(vDuration, p.video().getOffset(), vshift,
 					aDuration, p.audio().getOffset());
 			}
 			int i=0;
 			if (p.video() != null) {
 				parts[i++] = p.video().getName();
-				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[0] : 0.0f);
-				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[0] + bounds[2] : vDuration);
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds.getVideoStart() : 0.0f);
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds.getVideoStart() + bounds.getDuration() : vDuration);
 			}
 			else
 				i += parts.length / 2;
 			if (p.audio() != null) {
 				parts[i++] = p.audio().getName();
-				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[1] : 0.0f);
-				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds[1] + bounds[2] : aDuration);
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds.getAudioStart() : 0.0f);
+				parts[i++] = TIME_FORMAT.format((bounds != null) ? bounds.getAudioStart() + bounds.getDuration() : aDuration);
 			}
 			System.out.println(Text.join(parts, delim));
 		}
 	}
 	
-	public static void stag(Cache cache, List<String> filePaths, Config cfg)
+	private static void stag(List<String> filePaths, Session s)
 		throws Exception {
-		Map<Workspace, String[]> wfMap = arrangeByWorkspace(cache, filePaths, cfg);
+		Map<Workspace, String[]> wfMap = arrangeByWorkspace(filePaths, s);
 		for (Workspace wksp : wfMap.keySet()) {
 			for (String filePath : wfMap.get(wksp)) {
 				AVClipNDir cd = wksp.findClip(new File(filePath));
@@ -123,9 +72,9 @@ public class Cmd {
 		}
 	}
 	
-	public static void unstag(Cache cache, List<String> filePaths, Config cfg)
+	private static void unstag(List<String> filePaths, Session s)
 		throws Exception {
-		Map<Workspace, String[]> wfMap = arrangeByWorkspace(cache, filePaths, cfg);
+		Map<Workspace, String[]> wfMap = arrangeByWorkspace(filePaths, s);
 		for (Workspace wksp : wfMap.keySet()) {
 			for (String filePath : wfMap.get(wksp)) {
 				AVClipNDir cd = wksp.findClip(new File(filePath));
@@ -136,8 +85,7 @@ public class Cmd {
 		}
 	}
 	
-	private static Map<Workspace, String[]> arrangeByWorkspace(Cache cache,
-			List<String> filePaths, Config cfg)
+	private static Map<Workspace, String[]> arrangeByWorkspace(List<String> filePaths, Session s)
 			throws Exception {
 		Map<Workspace, String[]> wfMap = new TreeMap<Workspace, String[]>();
 		String dir = null;
@@ -149,7 +97,7 @@ public class Cmd {
 			String fdir = file.getParentFile().getCanonicalPath();
 			if (dir == null || !dir.equals(fdir)) {
 				if (wksp != null) wfMap.put(wksp, wfList.toArray(new String[]{}));
-				wksp = new Workspace(filePath, cfg, cache, getTheAVEngine(cfg), null);
+				wksp = s.getWorkspaceForPath(filePath);
 				dir = fdir;
 				wfList = new LinkedList<String>();
 			}
@@ -157,239 +105,6 @@ public class Cmd {
 		}
 		if (wksp != null) wfMap.put(wksp, wfList.toArray(new String[]{}));
 		return wfMap;
-	}
-	
-	public static void merge(Cache cache, String vpath, String outputDir,
-			String container, boolean separate, boolean retainVideo,
-			boolean retainAudio, boolean retainOther, float vshift,
-			String vcodec, String acodec, Config cfg, ProgressMonitor m) throws Exception {
-		try {
-			AVEngine avEngine = getTheAVEngine(cfg);
-			Workspace wksp = new Workspace(vpath, cfg, cache, avEngine, null);
-			AVDirRef vdir = wksp.getVideoDir(), adir = wksp.getAudioDir();
-			List<AVPair> contents = wksp.contents();
-			int i = 0;
-			for (Iterator<AVPair> pPair = contents.iterator(); pPair.hasNext();) {
-				AVPair pair = pPair.next();
-				AVClip vClip = pair.video(), aClip = pair.audio();
-				if (vClip == null || aClip == null) continue;
-				if (m != null) {
-					if (m.isCanceled()) throw new CancellationException();
-					m.setNote(String.format("%s / %s", vClip.getName(), aClip.getName()));
-					m.setProgress(Math.round(100.0f * i++ / contents.size()));
-				}
-				merge(vdir, vClip, adir, aClip, vshift, container, retainVideo, retainAudio,
-						retainOther, vcodec, acodec, outputDir, avEngine, cfg);
-			}
-		}
-		finally {
-			if (m != null) m.close();
-		}
-	}
-	
-	/** Perform a merge by re-packing video and audio streams from different
-	 *  source files into a single output container. */
-	private static String merge(AVDirRef vdir, AVClip vFile, AVDirRef adir,
-			AVClip aFile, float vAdjustment, String outputContainer,
-			boolean copyAllVideoStreams, boolean copyCameraAudioStream,
-			boolean copyOtherStreams, String vcodec, String acodec, String outputDir, AVEngine e, Config cfg) {
-		float vClipLen = vFile.getMeta().findFirst(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_VIDEO)).get(e.metaKeyName(AVEngine.MetaKey.DURATION)).fValue(),
-				aClipLen = aFile.getMeta().findFirst(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO)).get(e.metaKeyName(AVEngine.MetaKey.DURATION)).fValue();
-		float[] bounds = trimBoundaries(vClipLen, vFile.getOffset(), vAdjustment, aClipLen, aFile.getOffset());
-		String mergeFile = mergeTarget(vFile, outputContainer, outputDir);
-		SortedSet<Integer> vIndexSet = streamIndices(vFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_VIDEO), !copyAllVideoStreams);
-		SortedSet<Integer> aIndexSet = streamIndices(aFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO), !copyAllVideoStreams);
-		if (copyCameraAudioStream) {
-			vIndexSet.addAll(streamIndices(vFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO), false));
-		}
-		if (copyOtherStreams) {
-			vIndexSet.addAll(streamIndices(vFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_DATA), false));
-		}
-		AVClip vClip = new AVClip(vFile, bounds[0], bounds[2], vIndexSet);
-		AVClip aClip = new AVClip(aFile, bounds[1], bounds[2], aIndexSet);
-		if (vcodec == null && acodec == null)
-			e.repackage(vdir, vClip, adir, aClip, mergeFile);
-		else
-			e.transcode(vdir, vClip, adir, aClip, vcodec, acodec, mergeFile);
-		return mergeFile;
-	}
-	
-	/** Return the output filename for a merge operation */
-	private static String mergeTarget(AVFileRef vFile, String outputContainer, String outputDir) {
-		StringBuffer s = new StringBuffer(outputDir);
-		s.append(System.getProperty("file.separator"));
-		String name =vFile.getName(); 
-		s.append(name.substring(0, 1 + name.lastIndexOf('.')));
-		s.append(outputContainer);
-		return s.toString();
-	}
-	
-	/** Given the length and clap positions for each member of a video/audio pair,
-	 *  return 3 values in this order:
-	 *  1. trimmed video start time as an offset from the beginning of the source clip
-	 *  2. trimmed audio start time as an offset from the beginning of the source clip
-	 *  3. trimmed duration (same for both)
-	 *   */
-	public static float[] trimBoundaries(float vClipLen, float _vClapPos, float vShift, float aClipLen, float aClapPos) {
-		assert(vClipLen > _vClapPos);
-		assert(aClipLen > aClapPos);
-		float vClapPos = _vClapPos + vShift;
-		float[] bounds = new float[3];
-		float preClapLen = Math.min(vClapPos, aClapPos),
-				postClapLen = Math.min(vClipLen - vClapPos, aClipLen - aClapPos);
-		bounds[0] = vClapPos - preClapLen;
-		bounds[1] = aClapPos - preClapLen;
-		bounds[2] = preClapLen + postClapLen;
-		return bounds;
-	}
-	
-	private static SortedSet<Integer> streamIndices(AVFileRef avf, String key, String value, boolean firstOnly) {
-		SortedSet<Integer> retval = new TreeSet<Integer>();
-		if (firstOnly) {
-			int i = avf.getMeta().findFirstIndex(key, value);
-			retval.add(Integer.valueOf(i));
-		}
-		else {
-			retval.addAll(avf.getMeta().findAllIndices(key, value));
-		}
-		return retval;
-	}
-	
-	private static AVClipNDir findAssociate(AVClipNDir cnd, Workspace wksp) {
-		for (Iterator<Workspace.AVPair> pp = wksp.contents().iterator(); pp.hasNext();) {
-			Workspace.AVPair p = pp.next();
-			switch (cnd.dir.getType()) {
-			case VIDEO:
-				if (p.video() != null && 0 == p.video().compareTo(cnd.clip)) {
-					return new AVClipNDir(p.audio(), wksp.getAudioDir());
-				}
-				break;
-			case AUDIO:
-				if (p.audio() != null && 0 == p.audio().compareTo(cnd.clip)) {
-					return new AVClipNDir(p.video(), wksp.getVideoDir());
-				}
-				break;
-			}
-		}
-		throw new NoSuchElementException();
-	}
-	
-	private static final String VIEW_CLAP = "clap", VIEW_FULL = "full",
-			VIEW_VIDEO = "video", VIEW_AUDIO = "audio";
-	public static void view(Cache cache, String filePath, String target, float vshift,
-			String container, Config cfg, int width, int height, int x, int y)
-		throws Exception {
-		AVEngine avEngine = getTheAVEngine(cfg);
-		Workspace wksp = new Workspace(filePath, cfg, cache, avEngine, null);
-		AVDirRef vdir = null, adir = null;
-		AVClip vclip = null, aclip = null;
-		AVClipNDir cd = wksp.findClip(new File(filePath)), associate = null;
-		try {
-			associate = findAssociate(cd, wksp);
-			if (cd.dir.getType() == AVDirRef.Type.VIDEO) {
-				vclip = cd.clip;
-				vdir = cd.dir;
-				aclip = associate.clip;
-				adir = associate.dir;
-			}
-			else {
-				aclip = cd.clip;
-				adir = cd.dir;
-				vclip = associate.clip;
-				vdir = associate.dir;
-			}
-		}
-		catch(NoSuchElementException nsee) {}
-		if (vclip == null) {
-			target = VIEW_AUDIO;
-			_l.log(Level.FINE, "There is no video, so the view target will be " + target);
-		}
-		else if (aclip == null) {
-			target = VIEW_VIDEO;
-			_l.log(Level.FINE, "There is no audio, so the view target will be " + target);
-		}
-		if (target.contentEquals(VIEW_CLAP)) {
-			previewClap(vdir, vclip, adir, aclip, vshift, container, avEngine, cfg,
-					width, height, x, y);
-		}
-		else if (target.contentEquals(VIEW_FULL)) {
-			previewMerge(vdir, vclip, adir, aclip, vshift, container, tmpdir(), avEngine, cfg,
-					width, height, x, y);
-		}
-		else if (target.contentEquals(VIEW_VIDEO)) {
-			AVClip playClip = new AVClip(vclip, 0.0f, AVClip.duration(vclip,
-					AVEngine.MetaValue.CODEC_TYPE_VIDEO, avEngine));
-			showClip(wksp.getVideoDir(), playClip, avEngine, width, height, x, y);
-		}
-		else if (target.contentEquals(VIEW_AUDIO)) {
-			AVClip playClip = new AVClip(aclip, 0.0f, AVClip.duration(aclip,
-					AVEngine.MetaValue.CODEC_TYPE_AUDIO, avEngine));
-			showClip(wksp.getAudioDir(), playClip, avEngine, width, height, x, y);
-		}
-	}
-	
-	private static void showClip(AVDirRef dir, AVClip clip, AVEngine e,
-			int width, int height, int x, int y) {
-			e.play(dir, clip, width, height, x, y);
-	}
-	
-	private static String tmpdir() {
-		return System.getProperty("java.io.tmpdir");
-	}
-	
-	private static String getContainer(String c, Config cfg) {
-		if (c != null && c.length() > 0)
-			return c;
-		return cfg.getProperty(Config.MERGE_FORMAT);
-	}
-	
-	private static void previewMerge(AVDirRef vdir, AVClip vFile, AVDirRef adir, AVClip aFile,
-			float vshift, String container, String workdir, AVEngine e, Config cfg,
-			int width, int height, int x, int y) throws IOException {
-		boolean allVideo = false, allAudio = false, copyOther = false;
-		String vcodec = null, acodec = null;
-		String previewFilePath = merge(vdir, vFile, adir, aFile, vshift,
-				getContainer(container, cfg), allVideo, allAudio, copyOther, vcodec, acodec, workdir, e, cfg);
-		File previewFile = new File(previewFilePath);
-		float mergedFileDuration = trimBoundaries(AVClip.duration(vFile, AVEngine.MetaValue.CODEC_TYPE_VIDEO, e),
-				vFile.getOffset(), vshift, AVClip.duration(aFile, AVEngine.MetaValue.CODEC_TYPE_AUDIO, e),
-				aFile.getOffset())[2];
-		AVClip pClip = new AVClip(new AVFileRef(previewFile, null), 0.0f, mergedFileDuration + POST_VIDEO_PADDING);
-		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e,
-				width, height, x, y);
-		previewFile.deleteOnExit();
-	}
-	
-	private static float POST_VIDEO_PADDING = 0.5f;
-	private static void previewClap(AVDirRef vdir, AVClip vFile, AVDirRef adir, AVClip aFile,
-			float vshift, String container, AVEngine e, Config cfg,
-			int width, int height, int x, int y) throws IOException {
-		// Normally, PRE_CLAP is a fixed value, but what if the clap comes less than
-		// that interval after the start of the clip?  Adjust if needed.
-		float usePreClap = Math.min(Math.min(vFile.getOffset(),
-				aFile.getOffset()), cfg.fvalue(Config.PRE_CLAP));
-		AVClip vClip = new AVClip(vFile, vFile.getOffset() + vshift - usePreClap,
-				usePreClap+cfg.fvalue(Config.POST_CLAP),
-				new int[]{vFile.getMeta().findFirstIndex(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE),
-				e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_VIDEO))});
-		AVClip aClip = new AVClip(aFile, aFile.getOffset() - usePreClap,
-				usePreClap+cfg.fvalue(Config.POST_CLAP),
-				new int[]{aFile.getMeta().findFirstIndex(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE),
-				e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO))});
-		File previewFile = File.createTempFile("preview", "." + getContainer(container, cfg));
-		previewFile.deleteOnExit();
-		e.repackage(vdir, vClip, adir, aClip, previewFile.toString());
-		AVClip pClip = new AVClip(new AVFileRef(previewFile, null),
-				0.0f, usePreClap + cfg.fvalue(Config.POST_CLAP) + POST_VIDEO_PADDING);
-		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip, e,
-				width, height, x, y);
-	}
-	
-	private static AVEngine avEngin = null;
-	public static AVEngine getTheAVEngine(Config cfg) {
-		if (avEngin == null)
-			avEngin = new AVEngineFFmpegMPV(cfg);
-		return avEngin;
 	}
 	
 	private static List<String> optArgs(String[] opts, int pos) {
@@ -428,7 +143,12 @@ public class Cmd {
 				"unstag - remove a previous stag designation\n" + 
 				"\n" + 
 				"view - view media\n" + 
-				"  view --target=" + Text.join(new String[]{VIEW_CLAP, VIEW_FULL, VIEW_VIDEO, VIEW_AUDIO}, "|") + " {file}\n" + 
+				"  view --target=" + Text.join(new String[]{
+						Workspace.VIEW_CLAP,
+						Workspace.VIEW_FULL,
+						Workspace.VIEW_VIDEO,
+						Workspace.VIEW_AUDIO
+						}, "|") + " {file}\n" + 
 				"\n" + 
 				"merge - trim clips and merge\n" + 
 				"  merge --output={dir} --container= [--separate] [--retain-video=default|all] [--retain-audio=none|all] [--retain-other=none|all] [--vshift=] [--vcodec=] [--acodec=]\n" + 
@@ -507,7 +227,7 @@ public class Cmd {
 		String command = argv[0], acodec = null, adir = null, afile = null,
 				aspec = null, cacheDir = null, container = null,
 				delim = "\t", listDir = null, outputDir = null, vcodec = null,
-				vdir = null, vfile = null, vspec = null, target = VIEW_CLAP;
+				vdir = null, vfile = null, vspec = null, target = Workspace.VIEW_CLAP;
 		float apos = -1.0f, vpos = -1.0f, vshift = 0.0f;
 		Getopt g = options(argv);
 		boolean retainAudio = false, retainOther = false, retainVideo = false,
@@ -541,32 +261,42 @@ public class Cmd {
 			default:					printHelpAndExit(); break;
 			}
 		}
-		Cache cache = new Cache(cacheDir);
-		Config cfg = new Config(cacheDir);
-		initLogging(cfg);
-		getTheAVEngine(cfg).check();
-		if (aspec == null) aspec = cfg.getProperty(Config.FILESPEC_AUDIO);
-		if (vspec == null) vspec = cfg.getProperty(Config.FILESPEC_VIDEO);
-		if (command.contentEquals("match")) {
-			if (vdir != null)
-				matchDirs(cache, vdir, adir, vspec, aspec, update, cfg, null);
-			else
-				matchFiles(cache, vfile, vpos, afile, apos, cfg);
+		Session session = new Session(cacheDir);
+		if (command.contentEquals("match") && vdir != null) {
+			if (aspec == null)
+				aspec = session.getConfig().getProperty(Config.FILESPEC_AUDIO);
+			if (vspec == null)
+				vspec = session.getConfig().getProperty(Config.FILESPEC_VIDEO);
+			session.getWorkspaceFromScan(vdir, vspec, adir, aspec, update, null);
 		}
-		else if (command.contentEquals("unmatch"))
-			unmatch(cache, vfile, afile, cfg);
+		else if (command.contentEquals("match") && vdir == null) {
+			File v = new File(vfile), a = new File(afile);
+			Workspace w = session.getWorkspaceForFile(v);
+			w.matchFiles(v, vpos, a, apos);
+		}
+		else if (command.contentEquals("unmatch")) {
+			File v = new File(vfile), a = new File(afile);
+			Workspace w = session.getWorkspaceForFile(v);
+			w.unmatch(v, a);
+		}
 		else if (command.contentEquals("list"))
-			list(cache, listDir, delim, vshift, cfg);
+			list(listDir, delim, vshift, session);
 		else if (command.contentEquals("stag"))
-			stag(cache, optArgs(opts, g.getOptind()), cfg);
+			stag(optArgs(opts, g.getOptind()), session);
 		else if (command.contentEquals("unstag"))
-			unstag(cache, optArgs(opts, g.getOptind()), cfg);
-		else if (command.contentEquals("view"))
-			view(cache, opts[g.getOptind()], target, vshift, container, cfg,
-					cfg.ivalue(Config.PREVIEW_WIDTH), cfg.ivalue(Config.PREVIEW_HEIGHT), -1, -1);
-		else if (command.contentEquals("merge"))
-			merge(cache, vdir, outputDir, container, separate, retainVideo,
-				retainAudio, retainOther, vshift, vcodec, acodec, cfg, null);
+			unstag(optArgs(opts, g.getOptind()), session);
+		else if (command.contentEquals("view")) {
+			File avFile = new File(opts[g.getOptind()]);
+			Workspace w = session.getWorkspaceForFile(avFile);
+			w.view(avFile, target, vshift, container,
+					session.getConfig().ivalue(Config.PREVIEW_WIDTH),
+					session.getConfig().ivalue(Config.PREVIEW_HEIGHT), -1, -1);
+		}
+		else if (command.contentEquals("merge")) {
+			Workspace w = session.getWorkspaceForPath(vdir);
+			w.merge(outputDir, container, separate, retainVideo, retainAudio, retainOther,
+					vshift, vcodec, acodec, null);
+	}
 		else
 			printHelpAndExit();
 	}

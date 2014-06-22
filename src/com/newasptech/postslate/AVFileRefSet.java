@@ -29,25 +29,22 @@ import com.newasptech.postslate.util.SimpleGlobFilter;
 
 public class AVFileRefSet {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.audio.wave.WaveStreamReader");
-	private Cache cache;
+	private Session session;
 	private AVDirRef dir;
-	private AVEngine avEngine;
 	private short maxEvents;
 	private short quantizeFactor;
 	private float typicalClapDuration;
 	private List<AVFileRef> fileRefs = null;
 	
-	public AVFileRefSet(AVDirRef _dir, boolean update, Config cfg, Cache _cache,
-			AVEngine _e, ProgressMonitor monitor)
+	public AVFileRefSet(AVDirRef _dir, boolean update, Session _session, ProgressMonitor monitor)
 			throws FileNotFoundException, InterruptedException, IOException, WaveStreamReader.NotWave {
-		cache = _cache;
+		session = _session;
 		dir = _dir;
-		avEngine = _e;
-		maxEvents = cfg.svalue(Config.SCAN_EVENTS);
-		quantizeFactor = cfg.svalue(Config.QUANTIZE_FACTOR);
-		typicalClapDuration = cfg.fvalue(Config.TYPICAL_CLAP_DURATION);
+		maxEvents = session.getConfig().svalue(Config.SCAN_EVENTS);
+		quantizeFactor = session.getConfig().svalue(Config.QUANTIZE_FACTOR);
+		typicalClapDuration = session.getConfig().fvalue(Config.TYPICAL_CLAP_DURATION);
 		if (!(indexFile().exists()) || update) {
-			scan(cfg.bvalue(Config.FILESPEC_IS_CASE_SENSITIVE), cfg, monitor);
+			scan(monitor);
 			save();
 		}
 		else {
@@ -69,7 +66,7 @@ public class AVFileRefSet {
 	}
 	
 	private File saveloc() {
-		return new File(cache.indexForFiles(dir.getPath(), dir.getType()));
+		return new File(session.getCache().indexForFiles(dir.getPath(), dir.getType()));
 	}
 	
 	private void save() throws FileNotFoundException, IOException {
@@ -98,7 +95,7 @@ public class AVFileRefSet {
 	}
 	
 	private File indexFile() {
-		return new File(cache.indexForFiles(dir.getPath(), dir.getType()));
+		return new File(session.getCache().indexForFiles(dir.getPath(), dir.getType()));
 	}
 	
 	private FileReader wavReader(AVFileRef fref, Config cfg)
@@ -113,17 +110,19 @@ public class AVFileRefSet {
 		if (audioReader != null) return audioReader;
 		File wav = File.createTempFile("pslate", ".wav");
 		wav.deleteOnExit();
+		AVEngine e = session.getAVEngine();
 		AVClip sourceClip = new AVClip(fref, 0.0f, -1.0f,
-				new int[]{fref.getMeta().findFirstIndex(avEngine.metaKeyName(AVEngine.MetaKey.CODEC_TYPE),
-				avEngine.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO))});
-		avEngine.transcode(null, null, dir, sourceClip, null, null, wav.toString());
+				new int[]{fref.getMeta().findFirstIndex(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE),
+				e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO))});
+		e.transcode(null, null, dir, sourceClip, null, null, wav.toString());
 		audioReader = new FileReaderWAV(wav);
 		return audioReader;
 	}
 
 	/** Scan the directory and create an index of matching files */
-	private void scan(boolean caseSensitiveFilemask, Config cfg, ProgressMonitor m)
+	private void scan(ProgressMonitor m)
 			throws FileNotFoundException, InterruptedException, IOException, WaveStreamReader.NotWave {
+		boolean caseSensitiveFilemask = session.getConfig().bvalue(Config.FILESPEC_IS_CASE_SENSITIVE);
 		try {
 			List<File> files = new LinkedList<File>(SimpleGlobFilter.ls(dir.getPath(), dir.getFileMask(), caseSensitiveFilemask));
 			List<AVFileRef> newFileRefs = new LinkedList<AVFileRef>();
@@ -138,12 +137,12 @@ public class AVFileRefSet {
 					m.setNote(fPath);
 					m.setProgress(Math.round(100.0f * completed++ / files.size()));
 				}
-				AVFileRef fref = new AVFileRef(f, avEngine.streamMeta(f));
+				AVFileRef fref = new AVFileRef(f, session.getAVEngine().streamMeta(f));
 				if (fileRefs != null && fileRefs.contains(fref)) {
 					newFileRefs.add(fileRefs.get(fileRefs.indexOf(fref)));
 				}
 				else {
-					fref.setEvents(cf.findClaps(wavReader(fref, cfg), maxEvents, quantizeFactor));
+					fref.setEvents(cf.findClaps(wavReader(fref, session.getConfig()), maxEvents, quantizeFactor));
 					newFileRefs.add(fref);
 				}
 			}

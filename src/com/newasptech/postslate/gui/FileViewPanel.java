@@ -38,6 +38,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import com.newasptech.postslate.AVDirRef;
+import com.newasptech.postslate.AVPair;
 import com.newasptech.postslate.Config;
 import com.newasptech.postslate.MatchBox;
 import com.newasptech.postslate.Workspace;
@@ -303,7 +304,8 @@ class FileViewPanel extends BasePanel {
 			break;
 		case SCANNED:
 			try {
-				w = getBackend().loadWorkspace(txt0.getFile().getAbsolutePath(), getMainFrame().controls());
+				getBackend().loadWorkspace(txt0.getFile().getAbsolutePath(), getMainFrame().controls());
+				w = getBackend().getWorkspace();
 			}
 			catch(Exception e) {
 				report(e);
@@ -357,7 +359,7 @@ class FileViewPanel extends BasePanel {
 				boolean isSelected, boolean hasFocus, int row, int column) {
 			AVFileTableModel m = (AVFileTableModel)table.getModel();
 			MatchBox mbox = backend.getWorkspace().getMatchBox();
-			Workspace.AVPair pair = m.getPairAt(row);
+			AVPair pair = m.getPairAt(row);
 			if (
 				(pair.video() != null && mbox.isStagVideo(pair.video()))
 				|| (pair.audio() != null && mbox.isStagAudio(pair.audio()))
@@ -378,8 +380,8 @@ class FileViewPanel extends BasePanel {
 	
 	public static class AVFileTableModel extends AbstractTableModel {
 		private final static long serialVersionUID = 1L;
-		List<Workspace.AVPair> avPairs = null;
-		public void setFiles(List<Workspace.AVPair> _avPairs) {
+		List<AVPair> avPairs = null;
+		public void setFiles(List<AVPair> _avPairs) {
 			avPairs = _avPairs;
 		}
 		public int getRowCount() {
@@ -390,7 +392,7 @@ class FileViewPanel extends BasePanel {
 			return 2;
 		}
 		public Object getValueAt(int row, int column) {
-			Workspace.AVPair p = null;
+			AVPair p = null;
 			if (avPairs != null && row >= 0 && row < avPairs.size()) {
 				p = avPairs.get(row);
 				switch(column) {
@@ -417,7 +419,7 @@ class FileViewPanel extends BasePanel {
 			}
 			return null;
 		}
-		public Workspace.AVPair getPairAt(int row) {
+		public AVPair getPairAt(int row) {
 			if (row >= 0 && row < avPairs.size())
 				return avPairs.get(row);
 			return null;
