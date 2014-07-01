@@ -7,10 +7,12 @@ package com.newasptech.postslate.audio.wave;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.TreeMap;
 import com.newasptech.postslate.audio.Event;
@@ -18,9 +20,20 @@ import com.newasptech.postslate.audio.Event;
 public class WaveRenderer {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.audio.wave.WaveRenderer");
 	private WaveBuffer buffer;
+	/** Map a 2-D rectangle covering the area of each clap tick mark to its corresponding time */
+	private Map<Rectangle, Float> clapTickMap = new Hashtable<Rectangle, Float>();
+	private int graphWidthInPixels = 0;
 	
 	public WaveRenderer(WaveBuffer _buffer) {
 		buffer = _buffer;
+	}
+	
+	public Map<Rectangle, Float> getClapTickMap() {
+		return clapTickMap;
+	}
+	
+	public int getGraphWidthInPixels() {
+		return graphWidthInPixels;
 	}
 	
 	/** Given the width of the graph as time, return a set of times where major ticks should be placed on the horizontal axis. */
@@ -79,7 +92,8 @@ public class WaveRenderer {
 
 		float[][] fAmp = buffer.summarize(hdim.getTimeStep());
 		int middle = viewHeight / 2, yRange = middle - 1;
-		for (int i = 0; i != fAmp[0].length; i++) {
+		graphWidthInPixels = fAmp[0].length;
+		for (int i = 0; i != graphWidthInPixels; i++) {
 			int yMin = middle + (int)(yRange * fAmp[0][i]);
 			int yMax = middle + (int)(yRange * fAmp[1][i]);
 			for (int y = yMin; y <= yMax; ++y)
@@ -95,13 +109,31 @@ public class WaveRenderer {
 			if (backgroundColor.getRGB() == bufferedImage.getRGB(hdim.getClapPosInPixels(hdim.getClapPosIdx()), j))
 				bufferedImage.setRGB(hdim.getClapPosInPixels(hdim.getClapPosIdx()), j, clapLineColor);
 		}
-		int CLAP_TICK_HEIGHT = 10;
+		
+		Map<Integer, Float> tempTickMap = new TreeMap<Integer, Float>();
+		int CLAP_TICK_HEIGHT = 10, y = 0, w = 1, h = CLAP_TICK_HEIGHT;
 		for (int i = 0; i != hdim.getClapCandidates().length; ++i) {
+			int x = hdim.getClapPosInPixels(i);
+			if (!tempTickMap.keySet().contains(x)) {
+				tempTickMap.put(x, hdim.getClapPosAsTime(i));
+			}
 			for (int j = 0; j != CLAP_TICK_HEIGHT; ++j) {
-				bufferedImage.setRGB(hdim.getClapPosInPixels(i), j, clapLineColor);
+				bufferedImage.setRGB(x, y + j, clapLineColor);
 			}
 		}
+		updateClapTickMap(tempTickMap, y, w, h);
 		return bufferedImage;
+	}
+	
+	private void updateClapTickMap(Map<Integer, Float> tempTickMap, int y, int w, int h) {
+		clapTickMap.clear();
+		for (Iterator<Map.Entry<Integer, Float>> pEntry = tempTickMap.entrySet().iterator();
+				pEntry.hasNext();) {
+			Map.Entry<Integer, Float> entry = pEntry.next();
+			int x = entry.getKey();
+			Float t = entry.getValue();
+			clapTickMap.put(new Rectangle(x, y, w, h), t);
+		}
 	}
 	
 	/** Horizontal dimensions for the graph */
