@@ -45,17 +45,17 @@ public class WaveRenderer {
 				zpos = hdim.getGraphStartInPixels() - LWIDTH;
 			m.put(zpos, 0.0f);
 		}
-		m.put(hdim.getTrimEndInPixels() - hdim.getClapPosInPixels() > LWIDTH ?
-				hdim.getClapPosInPixels() : hdim.getClapPosInPixels() - LWIDTH,
-				hdim.getClapPosAsTime());
+		m.put(hdim.getTrimEndInPixels() - hdim.getClapPosInPixels(hdim.getClapPosIdx()) > LWIDTH ?
+				hdim.getClapPosInPixels(hdim.getClapPosIdx()) : hdim.getClapPosInPixels(hdim.getClapPosIdx()) - LWIDTH,
+				hdim.getClapPosAsTime(hdim.getClapPosIdx()));
 		m.put(hdim.getTrimEndInPixels() - LWIDTH,
 				hdim.getTrimStartAsTime() + hdim.getTrimDuration());
 		return m;
 	}
 	
 	/** Render a graph of a wave file, returning it as an image.
-	 * @param viewHeight	height in pixels of the graph image
 	 * @param hdim		horizontal dimensions for the graph image
+	 * @param viewHeight	height in pixels of the graph image
 	 */
 	public BufferedImage renderWaveform(HorizDim hdim, int viewHeight) {
 		BufferedImage bufferedImage = new BufferedImage(hdim.getViewWidthInPixels(),
@@ -68,7 +68,8 @@ public class WaveRenderer {
 		int labelBase = bufferedImage.getHeight();
 		Color textColor = new Color(0, 0, 0);
 		g.setPaint(textColor);
-		for (Iterator<Map.Entry<Integer, Float>> pEntry = tickMap.entrySet().iterator(); pEntry.hasNext();) {
+		for (Iterator<Map.Entry<Integer, Float>> pEntry = tickMap.entrySet().iterator();
+				pEntry.hasNext();) {
 			Map.Entry<Integer, Float> entry = pEntry.next();
 			Integer H = entry.getKey();
 			String t = Event.TFMT.format(entry.getValue());
@@ -91,8 +92,14 @@ public class WaveRenderer {
 				bufferedImage.setRGB(hdim.getTrimStartInPixels(), j, boundaryLineColor);
 			if (backgroundColor.getRGB() == bufferedImage.getRGB(hdim.getTrimEndInPixels(), j))
 				bufferedImage.setRGB(hdim.getTrimEndInPixels(), j, boundaryLineColor);
-			if (backgroundColor.getRGB() == bufferedImage.getRGB(hdim.getClapPosInPixels(), j))
-				bufferedImage.setRGB(hdim.getClapPosInPixels(), j, clapLineColor);
+			if (backgroundColor.getRGB() == bufferedImage.getRGB(hdim.getClapPosInPixels(hdim.getClapPosIdx()), j))
+				bufferedImage.setRGB(hdim.getClapPosInPixels(hdim.getClapPosIdx()), j, clapLineColor);
+		}
+		int CLAP_TICK_HEIGHT = 10;
+		for (int i = 0; i != hdim.getClapCandidates().length; ++i) {
+			for (int j = 0; j != CLAP_TICK_HEIGHT; ++j) {
+				bufferedImage.setRGB(hdim.getClapPosInPixels(i), j, clapLineColor);
+			}
 		}
 		return bufferedImage;
 	}
@@ -102,32 +109,35 @@ public class WaveRenderer {
 		private int viewWidth;
 		private float trimStartTime;
 		private float trimDuration;
-		private float clapPos;
 		private float graphStartOffset;
 		private float viewWidthAsTime;
+		private float[] clapCandidates;
+		private int clapPosIdx;
 		public int getViewWidthInPixels() { return viewWidth; }
 		public float getGraphStartAsTime() { return graphStartOffset; }
 		public float getTrimStartAsTime() { return trimStartTime; }
-		public float getClapPosAsTime() { return clapPos; }
 		public float getTrimDuration() { return trimDuration; }
 		public float getViewWidthAsTime() { return viewWidthAsTime; }
+		public float[] getClapCandidates() { return clapCandidates; }
+		public int getClapPosIdx() { return clapPosIdx; }
 		/** Constructor
 		 * @param _viewWidth graph width in pixels
 		 * @param _trimStartTime the amount of time, in seconds, to be trimmed off the beginning of the clip
 		 * @param _trimDuration the duration of the clip, in seconds, after trimming
-		 * @param _clapPos the time offset of the clap, with respect to the beginning of the raw clip
 		 * @param _graphStartOffset the offset of the left edge of the graph, as a time in seconds 
 		 * @param _viewWidthAsTime the span of time represented by the entire width of the graph
+		 * @param _clapCandidates an array of candidate clap positions, as time offsets from the beginning of the clip
+		 * @param _clapPosIdx the 0-based index of the selected clap candidate
 		 *  */
-		public HorizDim(int _viewWidth, float _trimStartTime, float _trimDuration, float _clapPos, float _graphStartOffset, float _viewWidthAsTime) {
+		public HorizDim(int _viewWidth, float _trimStartTime, float _trimDuration, float _graphStartOffset, float _viewWidthAsTime, float[] _clapCandidates, int _clapPosIdx) {
 			viewWidth = _viewWidth;
 			trimStartTime = _trimStartTime;
 			trimDuration = _trimDuration;
-			clapPos = _clapPos;
 			graphStartOffset = _graphStartOffset;
 			viewWidthAsTime = _viewWidthAsTime;
+			clapCandidates = _clapCandidates;
+			clapPosIdx = _clapPosIdx;
 			timeStep = viewWidthAsTime / (viewWidth - 1);
-			clapPosH = (int)(((graphStartOffset + clapPos) / timeStep));
 			trimStartH = (int)((graphStartOffset + trimStartTime) / timeStep);
 			trimEndH = (int)((graphStartOffset + trimStartTime + trimDuration) / timeStep);
 			horizOffset = (int)(graphStartOffset / timeStep);
@@ -136,8 +146,13 @@ public class WaveRenderer {
 		private int clapPosH, trimStartH, trimEndH, horizOffset;
 		/** Return the timespan represented by one pixel in the graph. */
 		public float getTimeStep() { return timeStep; }
+		public float getClapPosAsTime(int idx) {
+			if (idx < 0 || idx >= clapCandidates.length)
+				return 0.0f;
+			return clapCandidates[idx];
+		}
 		/** Return the horizontal position of the clap, in pixels, with respect to the left edge of the graph */
-		public int getClapPosInPixels() { return clapPosH; }
+		public int getClapPosInPixels(int idx) { return (int)(((graphStartOffset + getClapPosAsTime(idx)) / timeStep)); }
 		/** Return the position of the trimmed start time, in pixels from the left edge of the graph */
 		public int getTrimStartInPixels() { return trimStartH; }
 		/** Return the position of the trimmed end time, in pixels from the left edge of the graph */
@@ -149,7 +164,7 @@ public class WaveRenderer {
 					"trimEndH = %d, viewWidthAsTime = %f, graphStartOffset = %f, trimStartTime = %f, " +
 					"clapPos = %f, trimDuration = %f, timeStep = %f",
 					viewWidth, horizOffset, trimStartH, clapPosH, trimEndH, viewWidthAsTime, graphStartOffset,
-					trimStartTime, clapPos, trimDuration, timeStep);
+					trimStartTime, getClapPosAsTime(getClapPosIdx()), trimDuration, timeStep);
 		}
 	}
 }

@@ -24,13 +24,14 @@ class WaveGraphPanel extends JPanel{
 	private float trimStartTime;
 	/** The duration of the trimmed clip */
 	private float trimDuration;
-	/** The offset of the clap, relative to the start of the raw clip, not the trimmed clip. */
-	private float clapPos;
 	/** The "left margin", so to speak: The offset by which the start of the raw clip should be shifted
 	 *  within the graph. (This allows the two graphs to be aligned on their clap positions.)  */
 	private float graphStartOffset;
 	/** The span of time represented by the entire width of the graph. */
 	private float graphTimeSpan;
+	private float[] clapCandidates;
+	/** The offset of the clap, relative to the start of the raw clip, not the trimmed clip. */
+	private int clapPosIdx;
 	
 	public void nullifyLoader() {
 		if (wavLoader != null) {
@@ -41,14 +42,15 @@ class WaveGraphPanel extends JPanel{
 	}
 	
 	public void prepareGraph(AsyncLoader _wavLoader, float _trimStartTime, float _trimDuration,
-			float _clapPos,	float _graphStartOffset, float _graphTimeSpan) {
+			float _graphStartOffset, float _graphTimeSpan, float[] _clapCandidates, int _clapPosIdx) {
 		nullifyLoader();
 		wavLoader = _wavLoader;
 		trimStartTime = _trimStartTime;
 		trimDuration = _trimDuration;
-		clapPos = _clapPos;
 		graphStartOffset = _graphStartOffset;
 		graphTimeSpan = _graphTimeSpan;
+		clapCandidates = _clapCandidates;
+		clapPosIdx = _clapPosIdx;
 		repaint();
 	}
 
@@ -63,7 +65,7 @@ class WaveGraphPanel extends JPanel{
         	WaveBuffer b = wavLoader.getBuffer();
         	WaveRenderer gr = new WaveRenderer(b);
         	WaveRenderer.HorizDim hdim = new WaveRenderer.HorizDim(getWidth(), trimStartTime,
-        			trimDuration, clapPos, graphStartOffset, graphTimeSpan);
+        			trimDuration, graphStartOffset, graphTimeSpan, clapCandidates, clapPosIdx);
         	_l.log(Level.FINE, hdim.toString());
         	BufferedImage image = gr.renderWaveform(hdim, getHeight());
         	g.drawImage(image, 0, 0, null);

@@ -96,6 +96,14 @@ class SyncPanel extends BasePanel {
 		spnCandidates.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				updateEventLists();
+				/*
+				try {
+					getSession().startWaveGraphs(-1);
+				}
+				catch(Exception ex) {
+					report(ex);
+				}
+				*/
 			}
 		});
 		spnCandidates.setToolTipText("How many clap-candidate items to show in the combo boxes?");

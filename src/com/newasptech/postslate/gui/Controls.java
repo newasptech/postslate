@@ -6,11 +6,13 @@ import java.util.logging.Logger;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 
 import com.newasptech.postslate.ViewController;
+import com.newasptech.postslate.audio.Event;
 
 public class Controls {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.Controls");
@@ -50,6 +52,8 @@ public class Controls {
 	public JCheckBox getRetainData() { return panelMerge.getRetainData(); }
 	public JCheckBox getSeparate() { return panelMerge.getSeparate(); }
 	public JPanel getViewPanel() { return panelView; }
+	public JList<Event> getVideoClapList() { return panelSync.getVideoClapList(); }
+	public JList<Event> getAudioClapList() { return panelSync.getAudioClapList(); }
 
 	public Properties asProperties() {
 		Properties p = new Properties();
