@@ -205,8 +205,7 @@ class GuiSession extends Session {
 				trimDuration = vClipLen;
 				graphTimeSpan = vClipLen;
 			}
-			String format = "wav";
-			File camAudio = File.createTempFile("pslm", "." + format);
+			File camAudio = File.createTempFile("pslm", "." + AsyncLoader.FILE_FORMAT);
 			camAudio.deleteOnExit();
 			_l.log(Level.FINE, "Transcode audio from " + vcd.dir.getPath() + "/" + vcd.clip.getName() + " to temporary file " + camAudio.getPath());
 			AVClip sourceClip = new AVClip(vcd.clip, 0.0f); // extract the whole clip. In vcd.clip, the Offset represents the clap position.

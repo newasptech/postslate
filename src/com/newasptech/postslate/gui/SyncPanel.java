@@ -96,14 +96,6 @@ class SyncPanel extends BasePanel {
 		spnCandidates.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				updateEventLists();
-				/*
-				try {
-					getSession().startWaveGraphs(-1);
-				}
-				catch(Exception ex) {
-					report(ex);
-				}
-				*/
 			}
 		});
 		spnCandidates.setToolTipText("How many clap-candidate items to show in the combo boxes?");
@@ -206,25 +198,27 @@ class SyncPanel extends BasePanel {
 	}
 	
 	public void setClips(AVClip vclip, AVClip aclip) {
-		videoClip = vclip;
-		audioClip = aclip;
+		currentVideoClip = vclip;
+		currentAudioClip = aclip;
 		updateEventLists();
 	}
 	
 	private void setNewClapPosition(boolean isVideo, Event clap) {
+		AVClip newClip = getSession().setClapEvent(currentVideoClip, currentAudioClip, isVideo, clap);
 		if (isVideo)
-			videoClip = getSession().setClapEvent(videoClip, audioClip, isVideo, clap);
+			currentVideoClip = newClip;
 		else
-			audioClip = getSession().setClapEvent(videoClip, audioClip, isVideo, clap);
+			currentAudioClip = newClip;
 	}
-	private AVClip videoClip = null, audioClip = null;
+	private AVClip currentVideoClip = null;
+	private AVClip currentAudioClip = null;
 	
 	private void updateEventLists() {
 		int eventCount = (Integer)getMainFrame().controls().getCandidates().getValue();
 		boolean scoreOrder = audioEventOrder.isSelected(rdbtnScore.getModel());
 		disableListSelectionListeners();
-		updateEventList(videoClip, lstVideoClapTime, eventCount, scoreOrder);
-		updateEventList(audioClip, lstAudioClapTime, eventCount, scoreOrder);
+		updateEventList(currentVideoClip, lstVideoClapTime, eventCount, scoreOrder);
+		updateEventList(currentAudioClip, lstAudioClapTime, eventCount, scoreOrder);
 		enableListSelectionListeners();
 	}
 	

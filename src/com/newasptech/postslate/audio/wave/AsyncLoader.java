@@ -27,6 +27,7 @@ public class AsyncLoader extends Thread {
 	private WaveBuffer buffer = null;
 	private Exception cachedException = null;
 	private File toDelete = null;
+	public static final String FILE_FORMAT = "wav";
 	
 	public AsyncLoader(String path, boolean deleteWhenFinished) throws FileNotFoundException {
 		istr = new FileInputStream(path);
@@ -50,7 +51,7 @@ public class AsyncLoader extends Thread {
 		catch(Exception e) {
 			cachedException = e;
 		}
-		_l.log(Level.FINE, "Finished buffering WAV stream");
+		_l.log(Level.FINE, "Finished buffering " + FILE_FORMAT + " stream");
 	}
 	
 	public WaveBuffer getBuffer() throws Exception {
