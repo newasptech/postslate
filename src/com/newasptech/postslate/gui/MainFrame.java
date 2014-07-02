@@ -65,14 +65,14 @@ public class MainFrame extends JFrame {
 	 * Create the frame.
 	 */
 	public MainFrame(String cacheDir) throws FileNotFoundException, IOException {
-		StringBuffer guiPropertiesFile = new StringBuffer(Cache.location(cacheDir).getAbsolutePath());
+		StringBuffer guiPropertiesFile = new StringBuffer(Cache.getUsableDirectory(Cache.location(cacheDir)).getAbsolutePath());
 		guiPropertiesFile.append(System.getProperty("file.separator"));
 		guiPropertiesFile.append("gui.properties");
 		propertiesFile = new File(guiPropertiesFile.toString());
 		
 		setTitle("Postslate");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 1000, 492);
+		setBounds(100, 100, 1100, 600);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);

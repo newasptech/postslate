@@ -27,7 +27,7 @@ public class Cache {
 		return new File(basedir_s.toString());
 	}
 	
-	private static File getUsableDirectory(File path) {
+	public static File getUsableDirectory(File path) {
 		if (!path.exists()) {
 			path.mkdirs();
 		}
