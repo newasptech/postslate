@@ -48,6 +48,12 @@ class FileViewPanel extends BasePanel {
 	private JScrollPane listFilesScrollPane = null;
 	private DirectorySelectionAdapter dsaCameraPath = null;
 	private DirectorySelectionAdapter dsaExtAudioPath = null;
+	/** The index of the table column containing video files. */
+	public static final int VIDEO_COL = 0;
+	/** The index of the table column containing audio files. */
+	public static final int AUDIO_COL = 1;
+	/** The row number used to indicate "use whatever row is selected" */
+	public static final int SELECTED_ROW = -1;
 	
 	/**
 	 * Create the panel.
@@ -241,18 +247,6 @@ class FileViewPanel extends BasePanel {
 		return retval;
 	}
 	
-	private static final String BTN_LABEL_SCAN = "Scan", BTN_LABEL_RESCAN = "Re-scan";
-	private void scanClicked() {
-		boolean update = btnScan.getText().equals(BTN_LABEL_RESCAN);
-		ProgressMonitor m = getMainFrame().getProgressMonitor(0, 100, "Scanning Files");
-		ScanThread t = new ScanThread(getSession(), dsaCameraPath.getFile().getAbsolutePath(),
-				dsaExtAudioPath.getFile().getAbsolutePath(),
-				((VideoFileMaskOptions)cboCameraNameMask.getSelectedItem()).filemask,
-				((AudioFileMaskOptions)cboExtAudioNameMask.getSelectedItem()).filemask,
-				update, m);
-		t.start();		
-	}
-	
 	private void changedPath(AVDirRef.Type type0, DirectorySelectionAdapter txt0, DirectorySelectionAdapter txt1) {
 		Workspace w = null;
 		DirectoryState state0 = getState(txt0, type0);
@@ -263,7 +257,7 @@ class FileViewPanel extends BasePanel {
 			getSession().clearWorkspace();
 			btnScan.setText(BTN_LABEL_SCAN);
 			btnScan.setEnabled(state0 == DirectoryState.USABLE
-					&& getState(txt1, type0==AVDirRef.Type.VIDEO?AVDirRef.Type.AUDIO:AVDirRef.Type.VIDEO) == DirectoryState.USABLE);
+					&& getState(txt1, type0 == AVDirRef.Type.VIDEO ? AVDirRef.Type.AUDIO : AVDirRef.Type.VIDEO) == DirectoryState.USABLE);
 			break;
 		case SCANNED:
 			try {
@@ -287,34 +281,31 @@ class FileViewPanel extends BasePanel {
 	public DirectorySelectionAdapter getCameraPath() { return dsaCameraPath; }
 	public DirectorySelectionAdapter getExtAudioPath() { return dsaExtAudioPath; }
 	
-	class ScanThread extends Thread {
-		private GuiSession guiSession;
-		private String cameraPath, extAudioPath, vFilemask, aFilemask;
-		private boolean update;
-		private ProgressMonitor m;
-		public ScanThread(GuiSession _session, String _cameraPath, String _extAudioPath, String _vFilemask, String _aFilemask, boolean _update, ProgressMonitor _m) {
-			guiSession = _session;
-			cameraPath = _cameraPath;
-			extAudioPath = _extAudioPath;
-			vFilemask = _vFilemask;
-			aFilemask = _aFilemask;
-			update = _update;
-			m = _m;
-		}
-		public void run() {
-			try {
-				guiSession.scanNewWorkspace(cameraPath, extAudioPath, vFilemask, aFilemask, update, m);
+	private static final String BTN_LABEL_SCAN = "Scan", BTN_LABEL_RESCAN = "Re-scan";
+	private void scanClicked() {
+		Thread t = new Thread() {
+			public void run() {
+				ProgressMonitor m = getMainFrame().getProgressMonitor(0, 100, "Scanning Files");
+				boolean update = btnScan.getText().equals(BTN_LABEL_RESCAN);
+				try {
+					getSession().scanNewWorkspace(dsaCameraPath.getFile().getAbsolutePath(),
+						dsaExtAudioPath.getFile().getAbsolutePath(),
+						((VideoFileMaskOptions)cboCameraNameMask.getSelectedItem()).filemask,
+						((AudioFileMaskOptions)cboExtAudioNameMask.getSelectedItem()).filemask,
+						update, m);
+				}
+				catch(Exception ex) {
+					report(ex);
+				}
+				finally {
+					m.close();
+				}
+				btnScan.setText(BTN_LABEL_RESCAN);
 			}
-			catch(Exception ex) {
-				report(ex);
-			}
-			finally {
-				m.close();
-			}
-			btnScan.setText(BTN_LABEL_RESCAN);
-		}
+		};
+		t.start();		
 	}
-	
+
 	class AVFileTableListener extends MouseAdapter implements ListSelectionListener {
 		public void mouseClicked(MouseEvent e) {
 			int row = listFiles.rowAtPoint(new Point(e.getX(), e.getY()));

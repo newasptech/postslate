@@ -36,7 +36,6 @@ class GuiSession extends Session {
 	private static Logger _l = Logger.getLogger("com.newasptech.postslate.gui.Backend");
 	private Workspace workspace = null;
 	private MainFrame mainFrame = null;
-	
 	public GuiSession(String cacheDir, MainFrame _mainFrame)
 			throws IOException, AVEngine.ComponentCheckFailed, AVEngine.OptionalComponentMissing,
 			AVEngine.RequiredComponentMissing {
@@ -90,6 +89,7 @@ class GuiSession extends Session {
 	}
 	
 	public static final String STAG_MATCH = "";
+	/** Mark or unmark an A/V clip as stag. */
 	public void toggleStag(int row, int col) throws Exception {
 		if (STAG_MATCH.equals((String)controls().getFileList().getValueAt(row, col))) return;
 		AVClipNDir cd = workspace.findClip(new File(getFilePath(row, col)));
@@ -103,7 +103,7 @@ class GuiSession extends Session {
 	
 	public void setClapEvent(WaveGraphPanel wgPanel, float clapTime) {
 		try {
-			AVClips clips = new AVClips(-1);
+			SelectedAVClipNDirPair clips = new SelectedAVClipNDirPair(-1);
 			boolean videoChanged = controls().getVideoGraphPanel().equals(wgPanel);
 			Event[] candidates = (videoChanged) ? clips.vClip.clip.getEvents() : clips.aClip.clip.getEvents();
 			int idx = getClapIndex(candidates, clapTime);
@@ -151,7 +151,7 @@ class GuiSession extends Session {
         			videoChanged ? controls().getAudioClapList().getSelectedIndex()
         					: getClapIndex(aClip.getEvents(), clap.getTime())
     						);
-        	autoPlayIfNeeded(-1);
+        	autoPlayIfNeeded(FileViewPanel.SELECTED_ROW);
     	}
     	catch(Exception ex) {
     		_l.log(Level.SEVERE, "Caught an exception while updating matches", ex);
@@ -176,7 +176,7 @@ class GuiSession extends Session {
 	}
 	
 	public void startWaveGraphs(int row) throws Exception {
-		AVClips clips = new AVClips(row);
+		SelectedAVClipNDirPair clips = new SelectedAVClipNDirPair(row);
 		int vClapPosIdx = clips.vClip == null ? 0 : getClapIndex(clips.vClip.clip.getEvents(), clips.vClip.clip.getOffset()),
 				aClapPosIdx = clips.aClip == null ? 0 : getClapIndex(clips.aClip.clip.getEvents(), clips.aClip.clip.getOffset());
 		updateWaveGraphs(clips.vClip, vClapPosIdx, clips.aClip, aClapPosIdx);
@@ -261,7 +261,7 @@ class GuiSession extends Session {
 	}
 	
 	private String getFilePath(int row, int col) {
-		StringBuilder filePath = new StringBuilder(((col == 0) ? workspace.getVideoDir() : workspace.getAudioDir()).getPath());
+		StringBuilder filePath = new StringBuilder(((col == FileViewPanel.VIDEO_COL) ? workspace.getVideoDir() : workspace.getAudioDir()).getPath());
 		filePath.append(System.getProperty("file.separator"));
 		filePath.append((String)controls().getFileList().getValueAt(row, col));
 		return filePath.toString();
@@ -269,7 +269,7 @@ class GuiSession extends Session {
 	
 	/** Return the selected video/audio file, or null if none is currently selected.
 	 * @param row a row index from the file list, or -1 to use the current selection
-	 * @param col the column number of the video/audio file (0 or 1)
+	 * @param col the column number of the video/audio file (VIDEO_COL or AUDIO_COL)
 	 * @param c Controls reference
 	 *  */
 	private String getSelectedFilePath(int row, int col) {
@@ -280,11 +280,48 @@ class GuiSession extends Session {
 		return getFilePath(row, col);
 	}
 	
+	private ViewController newViewController() {
+		return new ViewController((Float)controls().getVideoShift().getValue(),
+				(String)controls().getMergeFormat().getSelectedItem(), workspace);
+	}
+	
+	private Rectangle previewArea() {
+		JPanel vp = controls().getViewPanel();
+		Point lhCorner = vp.getLocationOnScreen();
+		int width = vp.getWidth(), height = vp.getHeight(),
+				x = (int)lhCorner.getX(), y = (int)lhCorner.getY();
+		return new Rectangle(x, y, width, height);
+	}
+	
+	public void autoPlayIfNeeded(int row) throws Exception {
+		if (!controls().getAutoView().isSelected()) return;
+		String vpath = getSelectedFilePath(row, FileViewPanel.VIDEO_COL),
+				apath = getSelectedFilePath(row, FileViewPanel.AUDIO_COL);
+		if (vpath == null || apath == null) return;
+		doPlay(vpath);
+	}
+	
+	/** Play the selected portion (clap/full/video/audio) of the clip pair selected in the file list. */
+	public void play() {
+		int col = controls().getViewType() == ViewController.ViewType.AUDIO ? FileViewPanel.AUDIO_COL : FileViewPanel.VIDEO_COL;
+		String playFile = getSelectedFilePath(FileViewPanel.SELECTED_ROW, col);
+		if (playFile == null) return;
+		try {
+			doPlay(playFile);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace(System.err);
+		}
+	}
+	
+	/** Start a preview of a "slice" of video or audio. This is used for the graph mouse-over preview.
+	 * @param panel the graph panel  */
 	public void startSlicePreview(WaveGraphPanel panel, float offset, float _duration) {
 		float MIN_DURATION = 0.5f, duration = Math.max(_duration, MIN_DURATION);
-		int row = -1, col = (panel.equals(controls().getVideoGraphPanel()) ? 0 : 1);
+		int row = FileViewPanel.SELECTED_ROW, col = (panel.equals(controls().getVideoGraphPanel()) ? FileViewPanel.VIDEO_COL : FileViewPanel.AUDIO_COL);
 		String filePath = getSelectedFilePath(row, col);
-		_l.log(Level.FINE, "Preview " + (col == 0 ? "video" : "audio") + " panel from file" + filePath + ", offset " + offset + ", duration " + duration);
+		_l.log(Level.FINE, "Preview " + (col == FileViewPanel.VIDEO_COL ? "video" : "audio") + " panel from file" +
+				filePath + ", offset " + offset + ", duration " + duration);
 		Rectangle r = previewArea();
 		try {
 			newViewController().view(new File(filePath), offset, duration,
@@ -303,40 +340,6 @@ class GuiSession extends Session {
 				(int)r.getWidth(), (int)r.getHeight(), (int)r.getX(), (int)r.getY());
 	}
 	
-	private ViewController newViewController() {
-		return new ViewController((Float)controls().getVideoShift().getValue(),
-				(String)controls().getMergeFormat().getSelectedItem(), workspace);
-	}
-	
-	private Rectangle previewArea() {
-		JPanel vp = controls().getViewPanel();
-		Point lhCorner = vp.getLocationOnScreen();
-		int width = vp.getWidth(), height = vp.getHeight(),
-				x = (int)lhCorner.getX(), y = (int)lhCorner.getY();
-		return new Rectangle(x, y, width, height);
-	}
-	
-	public void autoPlayIfNeeded(int row) throws Exception {
-		if (!controls().getAutoView().isSelected()) return;
-		int vcol = 0, acol = 1;
-		String vpath = getSelectedFilePath(row, vcol),
-				apath = getSelectedFilePath(row, acol);
-		if (vpath == null || apath == null) return;
-		doPlay(vpath);
-	}
-	
-	public void play() {
-		int col = controls().getViewType() == ViewController.ViewType.AUDIO ? 1 : 0;
-		String playFile = getSelectedFilePath(-1, col);
-		if (playFile == null) return;
-		try {
-			doPlay(playFile);
-		}
-		catch(Exception ex) {
-			ex.printStackTrace(System.err);
-		}
-	}
-	
 	/** Clean up any loose ends. Should be called on exit. */
 	public void cleanup() {
 		AVEngine e = getAVEngine();
@@ -345,9 +348,9 @@ class GuiSession extends Session {
 	}
 	
 	/** Get the currently-selected clips, or the clips from a given row in the file list. */
-	class AVClips {
+	class SelectedAVClipNDirPair {
 		public AVClipNDir vClip = null, aClip = null;
-		public AVClips(int row) throws Exception {
+		public SelectedAVClipNDirPair(int row) throws Exception {
 			if (row < 0) row = controls().getFileList().getSelectedRow();
 			boolean haveVideo = !(STAG_MATCH.equals((String)controls().getFileList().getValueAt(row, 0)));
 			if (haveVideo) vClip = workspace.findClip(new File(getFilePath(row, 0)));

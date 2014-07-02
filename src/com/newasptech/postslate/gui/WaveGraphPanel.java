@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 import javax.swing.JPanel;
 
 import com.newasptech.postslate.audio.wave.AsyncLoader;
-import com.newasptech.postslate.audio.wave.WaveRenderer;
 import com.newasptech.postslate.audio.wave.WaveBuffer;
 
 class WaveGraphPanel extends JPanel{
@@ -39,7 +38,7 @@ class WaveGraphPanel extends JPanel{
 	/** The offset of the clap, relative to the start of the raw clip, not the trimmed clip. */
 	private int clapPosIdx;
 	private Map<Rectangle, Float> clapTickMap = null;
-	private WaveRenderer.HorizDim hdim = null;
+	private GraphHorizDim hdim = null;
 	private int graphEndInPixels = 0;
 	private GuiSession session;
 	
@@ -91,7 +90,7 @@ class WaveGraphPanel extends JPanel{
     	try {
         	WaveBuffer b = wavLoader.getBuffer();
         	WaveRenderer gr = new WaveRenderer(b);
-        	hdim = new WaveRenderer.HorizDim(getWidth(), trimStartTime,
+        	hdim = new GraphHorizDim(getWidth(), trimStartTime,
         			trimDuration, graphStartOffset, graphTimeSpan, clapCandidates, clapPosIdx);
         	_l.log(Level.FINE, hdim.toString());
         	BufferedImage image = gr.renderWaveform(hdim, getHeight());
