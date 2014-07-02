@@ -59,12 +59,14 @@ public class MergeController {
 	}
 	
 	/** Merge a single pair of video and audio clips. Return the path to the merged file. */
+	public static final String AUDIO_MERGE_CONTAINER = "wav";
 	public String merge(AVClip vFile, AVClip aFile) {
 		AVEngine e = workspace.getSession().getAVEngine();
 		float vClipLen = vFile.getMeta().findFirst(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_VIDEO)).get(e.metaKeyName(AVEngine.MetaKey.DURATION)).fValue(),
 				aClipLen = aFile.getMeta().findFirst(e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO)).get(e.metaKeyName(AVEngine.MetaKey.DURATION)).fValue();
 		TrimValues bounds = new TrimValues(vClipLen, vFile.getOffset(), vshift, aClipLen, aFile.getOffset());
-		String mergeFile = mergeTarget(vFile, container, outputDir);
+		String videoMergeFile = mergeTarget(vFile, container, outputDir),
+				audioMergeFile = mergeTarget(aFile, AUDIO_MERGE_CONTAINER, outputDir);
 		SortedSet<Integer> vIndexSet = streamIndices(vFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_VIDEO), !copyAllVideoStreams);
 		SortedSet<Integer> aIndexSet = streamIndices(aFile, e.metaKeyName(AVEngine.MetaKey.CODEC_TYPE), e.metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO), !copyAllVideoStreams);
 		if (copyCameraAudioStream) {
@@ -75,11 +77,25 @@ public class MergeController {
 		}
 		AVClip vClip = new AVClip(vFile, bounds.getVideoStart(), bounds.getDuration(), vIndexSet);
 		AVClip aClip = new AVClip(aFile, bounds.getAudioStart(), bounds.getDuration(), aIndexSet);
-		if (vcodec == null && acodec == null)
-			e.repackage(workspace.getVideoDir(), vClip, workspace.getAudioDir(), aClip, mergeFile);
-		else
-			e.transcode(workspace.getVideoDir(), vClip, workspace.getAudioDir(), aClip, vcodec, acodec, mergeFile);
-		return mergeFile;
+		if (vcodec == null && acodec == null) {
+			if (separate) {
+				e.repackage(workspace.getVideoDir(), vClip, null, null, videoMergeFile);
+			}
+			else {
+				e.repackage(workspace.getVideoDir(), vClip, workspace.getAudioDir(), aClip, videoMergeFile);
+			}
+		}
+		else {
+			if (separate) {
+				e.transcode(workspace.getVideoDir(), vClip, null, null, vcodec, null, videoMergeFile);
+			}
+			else {
+				e.transcode(workspace.getVideoDir(), vClip, workspace.getAudioDir(), aClip, vcodec, acodec, videoMergeFile);
+			}
+		}
+		if (separate)
+			e.repackage(null, null, workspace.getAudioDir(), aClip, audioMergeFile);
+		return videoMergeFile;
 	}
 	
 	/** Return the output filename for a merge operation */
