@@ -113,8 +113,9 @@ class WaveGraphPanel extends JPanel{
 		for (Iterator<Rectangle> pR = clapTickMap.keySet().iterator(); pR.hasNext();) {
 			Rectangle r = pR.next();
 			if (r.contains(e.getX(), e.getY())) {
-				_l.log(Level.FINE, "Point (" + e.getX() + ", " + e.getY() + ") corresponds to time " + clapTickMap.get(r));
-				// WIP
+				float clapTime = clapTickMap.get(r);
+				_l.log(Level.FINE, "Point (" + e.getX() + ", " + e.getY() + ") corresponds to time " + clapTime);
+				session.setClapEvent(this, clapTime);
 			}
 		}
 	}

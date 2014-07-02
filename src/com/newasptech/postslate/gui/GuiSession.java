@@ -101,6 +101,21 @@ class GuiSession extends Session {
 		updateWorkspaceFileList();
 	}
 	
+	public void setClapEvent(WaveGraphPanel wgPanel, float clapTime) {
+		try {
+			AVClips clips = new AVClips(-1);
+			boolean videoChanged = controls().getVideoGraphPanel().equals(wgPanel);
+			Event[] candidates = (videoChanged) ? clips.vClip.clip.getEvents() : clips.aClip.clip.getEvents();
+			int idx = getClapIndex(candidates, clapTime);
+			setClapEvent(clips.vClip != null ? clips.vClip.clip : null, clips.aClip != null ? clips.aClip.clip : null,
+					videoChanged, candidates[idx]);
+			(videoChanged ? controls().getVideoClapList() : controls().getAudioClapList()).setSelectedIndex(idx);
+		}
+		catch(Exception ex) {
+			mainFrame.report(ex);
+		}
+	}
+	
 	/** Given an AVClip, change which event represents the clap. 
 	 * @param vClip video clip
 	 * @param aClip audio clip
@@ -152,7 +167,7 @@ class GuiSession extends Session {
 		return cl;
 	}
 	
-	private int getClapIndex(Event[] events, float t) {
+	private static int getClapIndex(Event[] events, float t) {
 		for (int i = 0; i < events.length; ++i) {
 			if (t == events[i].getTime())
 				return i;
@@ -161,20 +176,11 @@ class GuiSession extends Session {
 	}
 	
 	public void startWaveGraphs(int row) throws Exception {
-		AVClipNDir vClip = null, aClip = null;
-		boolean haveVideo = !(STAG_MATCH.equals((String)controls().getFileList().getValueAt(row, 0)));
-		int vClapPosIdx = 0, aClapPosIdx = 0;
-		if (haveVideo) {
-			vClip = workspace.findClip(new File(getFilePath(row, 0)));
-			vClapPosIdx = getClapIndex(vClip.clip.getEvents(), vClip.clip.getOffset());
-		}
-		boolean haveAudio = !(STAG_MATCH.equals((String)controls().getFileList().getValueAt(row, 1)));
-		if (haveAudio) {
-			aClip = workspace.findClip(new File(getFilePath(row, 1)));
-			aClapPosIdx = getClapIndex(aClip.clip.getEvents(), aClip.clip.getOffset());
-		}
-		updateWaveGraphs(vClip, vClapPosIdx, aClip, aClapPosIdx);
-		controls().getSyncPanel().setClips(vClip != null ? vClip.clip : null, aClip != null ? aClip.clip : null);
+		AVClips clips = new AVClips(row);
+		int vClapPosIdx = clips.vClip == null ? 0 : getClapIndex(clips.vClip.clip.getEvents(), clips.vClip.clip.getOffset()),
+				aClapPosIdx = clips.aClip == null ? 0 : getClapIndex(clips.aClip.clip.getEvents(), clips.aClip.clip.getOffset());
+		updateWaveGraphs(clips.vClip, vClapPosIdx, clips.aClip, aClapPosIdx);
+		controls().getSyncPanel().setClips(clips.vClip != null ? clips.vClip.clip : null, clips.aClip != null ? clips.aClip.clip : null);
 	}
 	
 	private void updateWaveGraphs(AVClipNDir vc0, int vClapPosIdx, AVClipNDir acd, int aClapPosIdx)
@@ -328,6 +334,18 @@ class GuiSession extends Session {
 		}
 		catch(Exception ex) {
 			ex.printStackTrace(System.err);
+		}
+	}
+	
+	/** Get the currently-selected clips, or the clips from a given row in the file list. */
+	class AVClips {
+		public AVClipNDir vClip = null, aClip = null;
+		public AVClips(int row) throws Exception {
+			if (row < 0) row = controls().getFileList().getSelectedRow();
+			boolean haveVideo = !(STAG_MATCH.equals((String)controls().getFileList().getValueAt(row, 0)));
+			if (haveVideo) vClip = workspace.findClip(new File(getFilePath(row, 0)));
+			boolean haveAudio = !(STAG_MATCH.equals((String)controls().getFileList().getValueAt(row, 1)));
+			if (haveAudio) aClip = workspace.findClip(new File(getFilePath(row, 1)));
 		}
 	}
 
