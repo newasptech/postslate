@@ -128,6 +128,11 @@ public class AVEngineFFmpegMPV implements AVEngine {
 		}
 	}
 	
+	public void stopCurrent() {
+		if (playSubWrap != null)
+			playSubWrap.kill();
+	}
+	
 	private void addCmdArgs(AVDirRef inputDir, AVClip clip, int filepos, List<String> iList, List<String> oList, Map<String, Integer> oStreamPos) {
 		if (clip == null) return;
 		iList.add("-ss");

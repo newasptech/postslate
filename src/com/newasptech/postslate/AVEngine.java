@@ -32,6 +32,9 @@ public interface AVEngine {
 	 *  */
 	void play(AVDirRef inputDir, AVClip input, int width, int height, int x, int y, boolean cancelAnyCurrent);
 	
+	/** Halt any current A/V playing */
+	void stopCurrent();
+	
 	/** Return a list of output container types */
 	String[] outputFormats();
 	

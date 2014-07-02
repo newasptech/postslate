@@ -25,4 +25,8 @@ public class SubprocessSingletonWrapper {
 	public boolean isRunning() {
 		return (pw != null && pw.getState() != Thread.State.TERMINATED);
 	}
+	public void kill() {
+		if (isRunning())
+			pw.getProcess().destroy();
+	}
 }

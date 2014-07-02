@@ -138,6 +138,13 @@ public class MainFrame extends JFrame {
 		}
 	}
 	
+	public void dispose() {
+		if (guiSession != null) {
+			guiSession.cleanup();
+		}
+		super.dispose();
+	}
+	
 	public static Image slateImage() {
 		return Toolkit.getDefaultToolkit().getImage(MainFrame.class.getResource("img/slate.png"));
 	}

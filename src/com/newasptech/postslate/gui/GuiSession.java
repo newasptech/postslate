@@ -337,6 +337,13 @@ class GuiSession extends Session {
 		}
 	}
 	
+	/** Clean up any loose ends. Should be called on exit. */
+	public void cleanup() {
+		AVEngine e = getAVEngine();
+		if (e != null)
+			e.stopCurrent();
+	}
+	
 	/** Get the currently-selected clips, or the clips from a given row in the file list. */
 	class AVClips {
 		public AVClipNDir vClip = null, aClip = null;
