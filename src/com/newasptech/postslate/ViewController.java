@@ -80,14 +80,22 @@ public class ViewController {
 		case VIDEO:
 			playClip = new AVClip(vclip, 0.0f, AVClip.duration(vclip,
 					AVEngine.MetaValue.CODEC_TYPE_VIDEO, workspace.getSession().getAVEngine()));
-			showClip(workspace.getVideoDir(), playClip, width, height, x, y);
+			showClip(workspace.getVideoDir(), playClip, width, height, x, y, true);
 			break;
 		case AUDIO:
 			playClip = new AVClip(aclip, 0.0f, AVClip.duration(aclip,
 					AVEngine.MetaValue.CODEC_TYPE_AUDIO, workspace.getSession().getAVEngine()));
-			showClip(workspace.getAudioDir(), playClip, width, height, x, y);
+			showClip(workspace.getAudioDir(), playClip, width, height, x, y, true);
 			break;
 		}
+	}
+	
+	public void view(File avFile, float start, float duration, int width, int height, int x, int y,
+			boolean cancelCurrent)
+		throws Exception {
+		AVClipNDir cd = workspace.findClip(avFile);
+		AVClip playClip = new AVClip(cd.clip, start, duration);
+		showClip(cd.dir, playClip, width, height, x, y, cancelCurrent);
 	}
 	
 	private void previewMerge(AVClip vFile, AVClip aFile, float vshift, String container,
@@ -104,7 +112,7 @@ public class ViewController {
 				aFile.getOffset());
 		AVClip pClip = new AVClip(new AVFileRef(previewFile, null), 0.0f, bounds.getDuration() + POST_VIDEO_PADDING);
 		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip,
-				width, height, x, y);
+				width, height, x, y, true);
 		previewFile.deleteOnExit();
 	}
 	
@@ -131,11 +139,12 @@ public class ViewController {
 		AVClip pClip = new AVClip(new AVFileRef(previewFile, null),
 				0.0f, usePreClap + cfg.fvalue(Config.POST_CLAP) + POST_VIDEO_PADDING);
 		showClip(new AVDirRef(AVDirRef.Type.VIDEO, previewFile.getParent(), null, null), pClip,
-				width, height, x, y);
+				width, height, x, y, true);
 	}
 	
-	private void showClip(AVDirRef dir, AVClip clip, int width, int height, int x, int y) {
-		workspace.getSession().getAVEngine().play(dir, clip, width, height, x, y);
+	private void showClip(AVDirRef dir, AVClip clip, int width, int height, int x, int y,
+			boolean cancelCurrent) {
+		workspace.getSession().getAVEngine().play(dir, clip, width, height, x, y, cancelCurrent);
 	}
 
 	private AVClipNDir findAssociate(AVClipNDir cnd) {

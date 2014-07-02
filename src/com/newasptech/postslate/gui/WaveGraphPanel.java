@@ -41,9 +41,11 @@ class WaveGraphPanel extends JPanel{
 	private Map<Rectangle, Float> clapTickMap = null;
 	private WaveRenderer.HorizDim hdim = null;
 	private int graphEndInPixels = 0;
+	private GuiSession session;
 	
-	public WaveGraphPanel() {
+	public WaveGraphPanel(GuiSession _session) {
 		super();
+		session = _session;
 		addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getButton() == MouseEvent.BUTTON1) {
@@ -107,7 +109,7 @@ class WaveGraphPanel extends JPanel{
 	
 	private void handleLBClick(MouseEvent e) {
 		_l.log(Level.FINE, "Received a left-mouse click at x=" + e.getX() + ", y=" + e.getY());
-		if (clapTickMap == null) return;
+		if (wavLoader == null || clapTickMap == null) return;
 		for (Iterator<Rectangle> pR = clapTickMap.keySet().iterator(); pR.hasNext();) {
 			Rectangle r = pR.next();
 			if (r.contains(e.getX(), e.getY())) {
@@ -119,14 +121,14 @@ class WaveGraphPanel extends JPanel{
 	
 	private void handleMouseOver(MouseEvent e) {
 		_l.log(Level.FINE, "Received a mouse-over event at (" + e.getX() + ", " + e.getY() + ")");
-		if (hdim == null) return;
+		if (wavLoader == null || hdim == null) return;
 		if (e.getX() < hdim.getGraphStartInPixels() || e.getX() >= graphEndInPixels) {
 			_l.log(Level.FINE, "This position is off the graph");
 		}
 		else {
 			float t = hdim.getTimeStep() * (e.getX() - hdim.getGraphStartInPixels());
 			_l.log(Level.FINE, "This position corresponds to time "+ t);
-			// WIP
+			session.startSlicePreview(this, t, hdim.getTimeStep());
 		}
 	}
 }

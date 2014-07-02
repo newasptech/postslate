@@ -22,4 +22,7 @@ public class SubprocessSingletonWrapper {
 		_l.log(Level.FINE, "Save new process");
 		pw = _pw;
 	}
+	public boolean isRunning() {
+		return (pw != null && pw.getState() != Thread.State.TERMINATED);
+	}
 }

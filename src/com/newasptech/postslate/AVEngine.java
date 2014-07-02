@@ -27,8 +27,10 @@ public interface AVEngine {
 	File transcode(AVDirRef vdir, AVClip vinput, AVDirRef adir, AVClip ainput, String videoCodec,
 			String audioCodec, String outputPath);
 	
-	/** Play a set of AV file clips */
-	void play(AVDirRef inputDir, AVClip input, int width, int height, int x, int y);
+	/** Play a set of AV file clips
+	 * @param cancelAnyCurrent cancel any clip currently playing
+	 *  */
+	void play(AVDirRef inputDir, AVClip input, int width, int height, int x, int y, boolean cancelAnyCurrent);
 	
 	/** Return a list of output container types */
 	String[] outputFormats();

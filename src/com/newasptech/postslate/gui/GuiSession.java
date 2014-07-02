@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import java.util.concurrent.CancellationException;
 
 import java.awt.Point;
+import java.awt.Rectangle;
 import javax.swing.JFileChooser;
 import javax.swing.ProgressMonitor;
 import javax.swing.JPanel;
@@ -273,17 +274,40 @@ class GuiSession extends Session {
 		return getFilePath(row, col);
 	}
 	
-	/** All GUI media-play calls get funneled down to this. */
+	public void startSlicePreview(WaveGraphPanel panel, float offset, float _duration) {
+		float MIN_DURATION = 0.5f, duration = Math.max(_duration, MIN_DURATION);
+		int row = -1, col = (panel.equals(controls().getVideoGraphPanel()) ? 0 : 1);
+		String filePath = getSelectedFilePath(row, col);
+		_l.log(Level.FINE, "Preview " + (col == 0 ? "video" : "audio") + " panel from file" + filePath + ", offset " + offset + ", duration " + duration);
+		Rectangle r = previewArea();
+		try {
+			newViewController().view(new File(filePath), offset, duration,
+				(int)r.getWidth(), (int)r.getHeight(), (int)r.getX(), (int)r.getY(), false);
+		}
+		catch(Exception ex) {
+			mainFrame.report(ex);
+		}
+	}
+	
+	/** Most GUI media-play calls get funneled down to this. */
 	private void doPlay(String filePath) throws Exception {
 		_l.log(Level.FINE, "View " + filePath + " portion " + controls().getViewType().toString());
+		Rectangle r = previewArea();
+		newViewController().view(new File(filePath), controls().getViewType(),
+				(int)r.getWidth(), (int)r.getHeight(), (int)r.getX(), (int)r.getY());
+	}
+	
+	private ViewController newViewController() {
+		return new ViewController((Float)controls().getVideoShift().getValue(),
+				(String)controls().getMergeFormat().getSelectedItem(), workspace);
+	}
+	
+	private Rectangle previewArea() {
 		JPanel vp = controls().getViewPanel();
 		Point lhCorner = vp.getLocationOnScreen();
 		int width = vp.getWidth(), height = vp.getHeight(),
 				x = (int)lhCorner.getX(), y = (int)lhCorner.getY();
-		File avFile = new File(filePath);
-		ViewController vc = new ViewController((Float)controls().getVideoShift().getValue(),
-				(String)controls().getMergeFormat().getSelectedItem(), workspace);
-		vc.view(avFile, controls().getViewType(), width, height, x, y);
+		return new Rectangle(x, y, width, height);
 	}
 	
 	public void autoPlayIfNeeded(int row) throws Exception {

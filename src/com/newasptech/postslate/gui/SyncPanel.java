@@ -142,7 +142,7 @@ class SyncPanel extends BasePanel {
 		JLabel lblClapTime = new JLabel("Clap occurs at");
 		add(lblClapTime, "12, 4, 7, 1");
 		
-		panelGraphVideo = new WaveGraphPanel();
+		panelGraphVideo = new WaveGraphPanel(getSession());
 		add(panelGraphVideo, "2, 6, 9, 1, fill, fill");
 		
 		lstVideoClapTime = new JList<Event>();
@@ -155,7 +155,7 @@ class SyncPanel extends BasePanel {
 		JLabel lblExternal = new JLabel("External Audio");
 		add(lblExternal, "2, 8, 3, 1");
 		
-		panelGraphAudio = new WaveGraphPanel();
+		panelGraphAudio = new WaveGraphPanel(getSession());
 		add(panelGraphAudio, "2, 10, 9, 1, fill, fill");
 		
 		lstAudioClapTime = new JList<Event>();

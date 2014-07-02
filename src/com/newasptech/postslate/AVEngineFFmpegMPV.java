@@ -83,7 +83,9 @@ public class AVEngineFFmpegMPV implements AVEngine {
 		return metaOut;
 	}
 	
-	public void play(AVDirRef inputDir, AVClip input, int width, int height, int x, int y) {
+	public void play(AVDirRef inputDir, AVClip input, int width, int height, int x, int y,
+			boolean cancelAnyCurrent) {
+		if (!cancelAnyCurrent && playSubWrap.isRunning()) return;
 		List<String> cmd = new LinkedList<String>();
 		cmd.add(Subprocess.execName("mpv"));
 		cmd.add("--no-config");
@@ -100,8 +102,14 @@ public class AVEngineFFmpegMPV implements AVEngine {
 			cmd.add(String.format("--autofit-larger=%dx%d", width, height));
 		if (x >= 0 && y >= 0)
 			cmd.add(String.format("--geometry=%d:%d", x, y));
+		if (input.getDuration() > 0.0f) {
+			cmd.add("--length=" + input.getDuration());
+		}
+		if (input.getOffset() > 0.0f) {
+			cmd.add("--start=" + input.getOffset());
+		}
 		String inputFilePath = inputDir.getPath() + System.getProperty("file.separator") + input.getName();
-		_l.log(Level.FINE, "Play AV clip " + inputFilePath + " with duration " + input.getDuration());
+		_l.log(Level.FINE, "Play AV clip " + inputFilePath + " from offset " + input.getOffset() + " with duration " + input.getDuration());
 		cmd.add(inputFilePath);
 		String[] cmdArray = cmd.toArray(new String[]{});
 		StringBuilder msg = new StringBuilder();
