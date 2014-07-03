@@ -72,7 +72,7 @@ public class MainFrame extends JFrame {
 		
 		setTitle("Postslate");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 1100, 600);
+		setBounds(100, 100, 1100, 700);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
