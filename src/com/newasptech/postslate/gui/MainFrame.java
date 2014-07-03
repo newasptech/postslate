@@ -269,7 +269,7 @@ public class MainFrame extends JFrame {
 		}
 	}
 
-	public static final String VERSION="0.1.1";
+	public static final String VERSION="0.2.0";
 	public static final String ABOUT_TITLE = "About Postslate",
 			ABOUT = "Postslate - a tool to synchronize slate claps from\n" +
 			"separately-recorded audio and video clips.\n" +

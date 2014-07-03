@@ -1,5 +1,5 @@
 AC_PREREQ([2.10])
-AC_INIT(postslate,0.1.1)
+AC_INIT(postslate,0.2.0)
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([postslate])
 
@@ -14,6 +14,14 @@ test $FFMPEG = missing || test $FFPLAY = missing || test $FFPROBE = missing && A
 Tools ffmpeg, ffplay and ffprobe from the FFMPEG package are required.
 Please download and install ffmpeg, version 2 or higher, before running postslate.
 See http://ffmpeg.org/download.html for details.])
+
+AC_PATH_PROG([MPV],[mpv],[missing])
+test $MPV = missing && AC_ERROR([
+The mpv video player is required.
+Please download and install it before running postslate.
+See http://mpv.io/installation/ for details.])
+
+AC_PATH_PROG([MPV],[mpv],[missing])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
