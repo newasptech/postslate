@@ -51,9 +51,10 @@ public class StreamMetaList extends LinkedList<StreamMeta> implements Serializab
 		int i = 0;
 		List<Integer> matches = new LinkedList<Integer>();
 		for (Iterator<StreamMeta> psm = iterator(); psm.hasNext(); ++i) {
+			StreamMeta sm = psm.next();
 			for (Iterator<String> pKey = kvfilter.keySet().iterator(); pKey.hasNext();) {
 				String key = pKey.next();
-				if (psm.next().matches(key, kvfilter.get(key))) {
+				if (sm.matches(key, kvfilter.get(key))) {
 					matches.add(Integer.valueOf(i));
 					break;
 				}

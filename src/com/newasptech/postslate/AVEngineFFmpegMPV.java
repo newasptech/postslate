@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -133,7 +135,7 @@ public class AVEngineFFmpegMPV implements AVEngine {
 			playSubWrap.kill();
 	}
 	
-	private void addCmdArgs(AVDirRef inputDir, AVClip clip, int filepos, List<String> iList, List<String> oList, Map<String, Integer> oStreamPos) {
+	private void addCmdArgs(AVDirRef inputDir, AVClip clip, int filepos, List<String> iList, SortedSet<String> oList, Map<String, Integer> oStreamPos) {
 		if (clip == null) return;
 		iList.add("-ss");
 		iList.add(Float.toString(clip.getOffset()));
@@ -145,7 +147,6 @@ public class AVEngineFFmpegMPV implements AVEngine {
 			if (!oStreamPos.containsKey(streamType)) {
 				oStreamPos.put(streamType, 0);
 			}
-			oList.add("-map");
 			StringBuffer a = new StringBuffer();
 			a.append(filepos);
 			a.append(":");
@@ -161,14 +162,15 @@ public class AVEngineFFmpegMPV implements AVEngine {
 	private File ffmpegVoodoo(AVDirRef vdir, AVClip vinput, AVDirRef adir, AVClip ainput,
 			String[] codecArgs, String outputPath) {
 		List<String> iList = new LinkedList<String>(), oList = new LinkedList<String>();
+		SortedSet<String> mList = new TreeSet<String>();
 		int filepos = 0;
 		Map<String, Integer> aStreamPos = new Hashtable<String, Integer>(), vStreamPos = new Hashtable<String, Integer>();
 		iList.add(Subprocess.execName("ffmpeg"));
 		iList.add("-y");
 		if (ainput != null)
-			addCmdArgs(adir, ainput, filepos++, iList, oList, aStreamPos);
+			addCmdArgs(adir, ainput, filepos++, iList, mList, aStreamPos);
 		if (vinput != null)
-			addCmdArgs(vdir, vinput, filepos++, iList, oList, vStreamPos);
+			addCmdArgs(vdir, vinput, filepos++, iList, mList, vStreamPos);
 		for (String a : codecArgs) {
 			oList.add(a);
 		}
@@ -179,6 +181,10 @@ public class AVEngineFFmpegMPV implements AVEngine {
 		}
 		oList.add(outputPath);
 		List<String> cmdList = new LinkedList<String>(iList);
+		for (Iterator<String> pMapArg = mList.iterator(); pMapArg.hasNext();) {
+			cmdList.add("-map");
+			cmdList.add(pMapArg.next());
+		}
 		cmdList.addAll(oList);
 		try {
 			String[] cmdArgs = cmdList.toArray(new String[]{});
