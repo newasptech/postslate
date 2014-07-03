@@ -8,6 +8,7 @@ package com.newasptech.postslate.gui;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
 //import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -115,6 +116,7 @@ class MergePanel extends BasePanel {
 									chkRetainData.isSelected(), (Float)(spnVShift.getValue()), null, null, getSession().getWorkspace());
 							mc.mergeAll(getMainFrame().getProgressMonitor(0, 100, "Merging"));
 						}
+						catch(CancellationException ce) {}
 						catch(Exception ex) {
 							report(ex);
 						}		
