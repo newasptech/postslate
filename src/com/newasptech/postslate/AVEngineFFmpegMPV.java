@@ -97,7 +97,6 @@ public class AVEngineFFmpegMPV implements AVEngine {
 		cmd.add("--quiet");
 		cmd.add("--stop-screensaver");
 		// options to improve A/V sync
-		cmd.add("--forceidx");
 		cmd.add("--framedrop=yes");
 		cmd.add("--initial-audio-sync");
 		if (width > 0 && height > 0)
