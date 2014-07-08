@@ -14,6 +14,7 @@ import java.util.concurrent.CancellationException;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import javax.swing.JFileChooser;
 import javax.swing.ProgressMonitor;
 import javax.swing.JPanel;
@@ -289,6 +290,9 @@ class GuiSession extends Session {
 		Point lhCorner = vp.getLocationOnScreen();
 		int width = vp.getWidth(), height = vp.getHeight(),
 				x = (int)lhCorner.getX(), y = (int)lhCorner.getY();
+		// On Mac, adjust for the fact that there is no menu bar inside the main window frame
+		if (Misc.isMac())
+			y -= Toolkit.getDefaultToolkit().getScreenInsets(mainFrame.getGraphicsConfiguration()).top;
 		return new Rectangle(x, y, width, height);
 	}
 	
