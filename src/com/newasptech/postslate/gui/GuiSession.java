@@ -327,8 +327,21 @@ class GuiSession extends Session {
 				filePath + ", offset " + offset + ", duration " + duration);
 		Rectangle r = previewArea();
 		try {
-			newViewController().view(new File(filePath), offset, duration,
-				(int)r.getWidth(), (int)r.getHeight(), (int)r.getX(), (int)r.getY(), false);
+			AVClipNDir cnd = workspace.findClip(new File(filePath));
+			AVClip modClip = null;
+			boolean forceAudioOnly = Misc.isMac() && col == FileViewPanel.VIDEO_COL;
+			if (forceAudioOnly) {
+				String key = getAVEngine().metaKeyName(AVEngine.MetaKey.CODEC_TYPE);
+				String value = getAVEngine().metaValueName(AVEngine.MetaValue.CODEC_TYPE_AUDIO);
+				int[] indices = new int[]{ cnd.clip.getMeta().findFirstIndex(key, value) };
+				modClip = new AVClip(cnd.clip, offset, duration, indices);
+			}
+			else {
+				modClip = new AVClip(cnd.clip, offset, duration);
+			}
+			AVClipNDir cndMod = new AVClipNDir(modClip, cnd.dir);
+			newViewController().view(cndMod, (int)r.getWidth(), (int)r.getHeight(),
+					(int)r.getX(), (int)r.getY(), forceAudioOnly, false);
 		}
 		catch(Exception ex) {
 			mainFrame.report(ex);

@@ -90,12 +90,20 @@ public class ViewController {
 		}
 	}
 	
-	public void view(File avFile, float start, float duration, int width, int height, int x, int y,
-			boolean cancelCurrent)
+	public void view(AVClipNDir cd, int width, int height, int x, int y,
+			boolean audioOnly, boolean cancelCurrent)
 		throws Exception {
-		AVClipNDir cd = workspace.findClip(avFile);
-		AVClip playClip = new AVClip(cd.clip, start, duration);
-		showClip(cd.dir, playClip, width, height, x, y, cancelCurrent);
+		if (audioOnly) {
+			File previewFile = File.createTempFile("preview", "." + getContainer(container));
+			previewFile.deleteOnExit();
+			workspace.getSession().getAVEngine().repackage(null, null, cd.dir, cd.clip, previewFile.toString());
+			AVDirRef dir = new AVDirRef(AVDirRef.Type.AUDIO, previewFile.getParent(), null, null);
+			AVClip clip = new AVClip(new AVFileRef(previewFile, null), 0.0f);
+			showClip(dir, clip, width, height, x, y, cancelCurrent);
+		}
+		else {
+			showClip(cd.dir, cd.clip, width, height, x, y, cancelCurrent);
+		}
 	}
 	
 	private void previewMerge(AVClip vFile, AVClip aFile, float vshift, String container,
